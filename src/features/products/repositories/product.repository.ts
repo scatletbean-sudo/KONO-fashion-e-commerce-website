@@ -1,4 +1,5 @@
 import { Prisma } from "@/generated/prisma/client";
+
 import { prisma } from "@/lib/db/prisma";
 
 const productInclude = {
@@ -29,16 +30,41 @@ const productInclude = {
   },
 } satisfies Prisma.ProductInclude;
 
+// ======================================================
+// DATABASE CLIENT
+// ======================================================
+
+type DbClient = Prisma.TransactionClient;
+
+const getDb = (db?: DbClient) => {
+  return db ?? prisma;
+};
+
+// ======================================================
+// PRODUCT REPOSITORY
+// ======================================================
+
 export const productRepository = {
+  // ======================================================
+  // TRANSACTION
+  // ======================================================
+
+  async transaction<T>(
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ) {
+    return prisma.$transaction(callback);
+  },
+
   // ======================================================
   // GET ALL PRODUCTS
   // ======================================================
 
-  async findAll() {
-    return prisma.product.findMany({
+  async findAll(db?: DbClient) {
+    return getDb(db).product.findMany({
       orderBy: {
         createdAt: "desc",
       },
+
       include: productInclude,
     });
   },
@@ -47,11 +73,15 @@ export const productRepository = {
   // GET PRODUCT BY ID
   // ======================================================
 
-  async findById(id: string) {
-    return prisma.product.findUnique({
+  async findById(
+    id: string,
+    db?: DbClient,
+  ) {
+    return getDb(db).product.findUnique({
       where: {
         id,
       },
+
       include: productInclude,
     });
   },
@@ -60,11 +90,15 @@ export const productRepository = {
   // GET PRODUCT BY SLUG
   // ======================================================
 
-  async findBySlug(slug: string) {
-    return prisma.product.findUnique({
+  async findBySlug(
+    slug: string,
+    db?: DbClient,
+  ) {
+    return getDb(db).product.findUnique({
       where: {
         slug,
       },
+
       include: productInclude,
     });
   },
@@ -73,9 +107,13 @@ export const productRepository = {
   // CREATE PRODUCT
   // ======================================================
 
-  async create(data: Prisma.ProductCreateInput) {
-    return prisma.product.create({
+  async create(
+    data: Prisma.ProductCreateInput,
+    db?: DbClient,
+  ) {
+    return getDb(db).product.create({
       data,
+
       include: productInclude,
     });
   },
@@ -87,12 +125,15 @@ export const productRepository = {
   async update(
     id: string,
     data: Prisma.ProductUpdateInput,
+    db?: DbClient,
   ) {
-    return prisma.product.update({
+    return getDb(db).product.update({
       where: {
         id,
       },
+
       data,
+
       include: productInclude,
     });
   },
@@ -101,8 +142,11 @@ export const productRepository = {
   // DELETE PRODUCT
   // ======================================================
 
-  async delete(id: string) {
-    return prisma.product.delete({
+  async delete(
+    id: string,
+    db?: DbClient,
+  ) {
+    return getDb(db).product.delete({
       where: {
         id,
       },

@@ -107,6 +107,15 @@ export const productVariantSchema = z.object({
 });
 
 // ======================================================
+// UPDATE PRODUCT VARIANT
+// ======================================================
+
+export const updateProductVariantSchema =
+  productVariantSchema.extend({
+    id: idSchema.optional(),
+  });
+
+// ======================================================
 // CREATE PRODUCT
 // ======================================================
 
@@ -201,6 +210,34 @@ export const updateProductSchema = createProductSchema
   .partial()
   .extend({
     id: idSchema,
+
+    // --------------------------------------------------
+    // RELATIONS
+    // --------------------------------------------------
+
+    categoryIds: z
+      .array(idSchema)
+      .optional(),
+
+    collectionIds: z
+      .array(idSchema)
+      .optional(),
+
+    // --------------------------------------------------
+    // IMAGES
+    // --------------------------------------------------
+
+    images: z
+      .array(productImageSchema)
+      .optional(),
+
+    // --------------------------------------------------
+    // VARIANTS
+    // --------------------------------------------------
+
+    variants: z
+      .array(updateProductVariantSchema)
+      .optional(),
   })
   .refine(
     (data) => Object.keys(data).length > 1,

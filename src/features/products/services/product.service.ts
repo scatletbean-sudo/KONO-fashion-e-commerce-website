@@ -179,80 +179,312 @@ export const productService = {
     return productRepository.create(createData);
   },
 
-  // ======================================================
-  // UPDATE PRODUCT
-  // ======================================================
+// ======================================================
+// UPDATE PRODUCT
+// ======================================================
 
-  async updateProduct(
-    data: UpdateProductInput,
-  ) {
-    const { id, ...updateData } = data;
+async updateProduct(
+  data: UpdateProductInput,
+) {
+  const { id, ...updateData } = data;
 
-    const existingProduct =
-      await productRepository.findById(id);
+  // --------------------------------------------------
+  // Check product exists
+  // --------------------------------------------------
 
-    if (!existingProduct) {
-      throw new Error("Product not found");
+  const existingProduct =
+    await productRepository.findById(id);
+
+  if (!existingProduct) {
+    throw new Error("Product not found");
+  }
+
+  // --------------------------------------------------
+  // Check slug conflict
+  // --------------------------------------------------
+
+  if (updateData.slug) {
+    const productWithSlug =
+      await productRepository.findBySlug(
+        updateData.slug,
+      );
+
+    if (
+      productWithSlug &&
+      productWithSlug.id !== id
+    ) {
+      throw new Error("Product slug already exists");
     }
+  }
 
-    // --------------------------------------------------
-    // Check slug conflict
-    // --------------------------------------------------
+  // --------------------------------------------------
+  // TRANSACTION
+  // --------------------------------------------------
 
-    if (updateData.slug) {
-      const productWithSlug =
-        await productRepository.findBySlug(
-          updateData.slug,
-        );
+  await productRepository.transaction(async (tx) => {
+    // ==================================================
+    // 1. UPDATE PRODUCT BASIC INFORMATION
+    // ==================================================
 
-      if (
-        productWithSlug &&
-        productWithSlug.id !== id
-      ) {
-        throw new Error("Product slug already exists");
+    const prismaData: Prisma.ProductUpdateInput = {
+      ...(updateData.name !== undefined && {
+        name: updateData.name,
+      }),
+
+      ...(updateData.slug !== undefined && {
+        slug: updateData.slug,
+      }),
+
+      ...(updateData.description !== undefined && {
+        description: updateData.description,
+      }),
+
+      ...(updateData.shortDescription !== undefined && {
+        shortDescription: updateData.shortDescription,
+      }),
+
+      ...(updateData.status !== undefined && {
+        status: updateData.status,
+      }),
+
+      ...(updateData.basePrice !== undefined && {
+        basePrice: updateData.basePrice,
+      }),
+
+      ...(updateData.compareAtPrice !== undefined && {
+        compareAtPrice: updateData.compareAtPrice,
+      }),
+
+      ...(updateData.brand !== undefined && {
+        brand: updateData.brand,
+      }),
+
+      ...(updateData.metaTitle !== undefined && {
+        metaTitle: updateData.metaTitle,
+      }),
+
+      ...(updateData.metaDescription !== undefined && {
+        metaDescription: updateData.metaDescription,
+      }),
+    };
+
+    await tx.product.update({
+      where: {
+        id,
+      },
+
+      data: prismaData,
+    });
+
+    // ==================================================
+    // 2. CATEGORIES
+    // ==================================================
+
+    if (updateData.categoryIds !== undefined) {
+      await tx.productCategory.deleteMany({
+        where: {
+          productId: id,
+        },
+      });
+
+      if (updateData.categoryIds.length > 0) {
+        await tx.productCategory.createMany({
+          data: updateData.categoryIds.map(
+            (categoryId) => ({
+              productId: id,
+              categoryId,
+            }),
+          ),
+          skipDuplicates: true,
+        });
       }
     }
 
-    // --------------------------------------------------
-    // Build Prisma update data
-    // --------------------------------------------------
+    // ==================================================
+    // 3. COLLECTIONS
+    // ==================================================
 
-    const prismaData: Prisma.ProductUpdateInput = {
-      name: updateData.name,
+    if (updateData.collectionIds !== undefined) {
+      await tx.productCollection.deleteMany({
+        where: {
+          productId: id,
+        },
+      });
 
-      slug: updateData.slug,
+      if (updateData.collectionIds.length > 0) {
+        await tx.productCollection.createMany({
+          data: updateData.collectionIds.map(
+            (collectionId) => ({
+              productId: id,
+              collectionId,
+            }),
+          ),
+          skipDuplicates: true,
+        });
+      }
+    }
 
-      description:
-        updateData.description,
+    // ==================================================
+    // 4. IMAGES
+    // ==================================================
 
-      shortDescription:
-        updateData.shortDescription,
+    if (updateData.images !== undefined) {
+      await tx.productImage.deleteMany({
+        where: {
+          productId: id,
+        },
+      });
 
-      status:
-        updateData.status,
+      if (updateData.images.length > 0) {
+        await tx.productImage.createMany({
+          data: updateData.images.map((image) => ({
+            productId: id,
+            url: image.url,
+            alt: image.alt,
+            sortOrder: image.sortOrder,
+            isPrimary: image.isPrimary,
+          })),
+        });
+      }
+    }
 
-      basePrice:
-        updateData.basePrice,
+    // ==================================================
+    // 5. VARIANTS
+    // ==================================================
 
-      compareAtPrice:
-        updateData.compareAtPrice,
+    if (updateData.variants !== undefined) {
+      for (const variant of updateData.variants) {
+        // ------------------------------------------------
+        // UPDATE EXISTING VARIANT
+        // ------------------------------------------------
 
-      brand:
-        updateData.brand,
+        if (variant.id) {
+          const existingVariant =
+            await tx.productVariant.findFirst({
+              where: {
+                id: variant.id,
+                productId: id,
+              },
+            });
 
-      metaTitle:
-        updateData.metaTitle,
+          if (!existingVariant) {
+            throw new Error(
+              `Variant not found: ${variant.id}`,
+            );
+          }
 
-      metaDescription:
-        updateData.metaDescription,
-    };
+          await tx.productVariant.update({
+            where: {
+              id: variant.id,
+            },
 
-    return productRepository.update(
-      id,
-      prismaData,
-    );
-  },
+            data: {
+              sku: variant.sku,
+              colorId: variant.colorId,
+              sizeId: variant.sizeId,
+              priceOverride:
+                variant.priceOverride,
+              costPrice:
+                variant.costPrice,
+              barcode:
+                variant.barcode,
+              isActive:
+                variant.isActive,
+            },
+          });
 
+          // ----------------------------------------------
+          // INVENTORY
+          // ----------------------------------------------
+
+          if (variant.inventory !== undefined) {
+            await tx.inventory.upsert({
+              where: {
+                variantId: variant.id,
+              },
+
+              create: {
+                variantId: variant.id,
+                quantity:
+                  variant.inventory.quantity,
+                reserved:
+                  variant.inventory.reserved,
+                lowStockAt:
+                  variant.inventory.lowStockAt,
+              },
+
+              update: {
+                quantity:
+                  variant.inventory.quantity,
+                reserved:
+                  variant.inventory.reserved,
+                lowStockAt:
+                  variant.inventory.lowStockAt,
+              },
+            });
+          }
+        }
+
+        // ------------------------------------------------
+        // CREATE NEW VARIANT
+        // ------------------------------------------------
+
+        else {
+          await tx.productVariant.create({
+            data: {
+              productId: id,
+
+              sku: variant.sku,
+
+              colorId:
+                variant.colorId,
+
+              sizeId:
+                variant.sizeId,
+
+              priceOverride:
+                variant.priceOverride,
+
+              costPrice:
+                variant.costPrice,
+
+              barcode:
+                variant.barcode,
+
+              isActive:
+                variant.isActive,
+
+              inventory:
+                variant.inventory
+                  ? {
+                      create: {
+                        quantity:
+                          variant.inventory
+                            .quantity,
+
+                        reserved:
+                          variant.inventory
+                            .reserved,
+
+                        lowStockAt:
+                          variant.inventory
+                            .lowStockAt,
+                      },
+                    }
+                  : undefined,
+            },
+          });
+        }
+      }
+    }
+  });
+
+  // --------------------------------------------------
+  // RETURN UPDATED PRODUCT
+  // --------------------------------------------------
+
+  return productRepository.findById(id);
+},
   // ======================================================
   // DELETE PRODUCT
   // ======================================================
