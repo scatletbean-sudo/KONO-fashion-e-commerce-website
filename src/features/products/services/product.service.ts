@@ -503,4 +503,4 @@ async updateProduct(
 
     return productRepository.delete(id);
   },
-};
+}
