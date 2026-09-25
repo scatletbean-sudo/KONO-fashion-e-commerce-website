@@ -36,7 +36,7 @@ export const createCategorySchema = z.object({
     .min(1, "Image URL cannot be empty")
     .optional(),
 
-  parentId: idSchema.optional(),
+  parentId: idSchema.nullable().optional(),
 
   isActive: z
     .boolean()
