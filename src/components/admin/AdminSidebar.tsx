@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   BarChart3,
   ChevronDown,
@@ -182,10 +184,39 @@ const menuGroups: MenuGroup[] = [
   },
 ];
 
+function getActiveGroup(pathname: string) {
+  if (pathname === "/admin") {
+    return "Dashboard";
+  }
+
+const group = menuGroups.find((group) =>
+  group.items.some((item) => {
+    if (item.href === "/admin") {
+      return pathname === "/admin";
+    }
+
+    return (
+      pathname === item.href ||
+      pathname.startsWith(`${item.href}/`)
+    );
+  }),
+);
+
+  return group?.label ?? "Dashboard";
+}
+
 export default function AdminSidebar({
   onNavigate,
 }: AdminSidebarProps) {
-  const [openGroup, setOpenGroup] = useState("Dashboard");
+  const pathname = usePathname();
+
+  const activeGroup = getActiveGroup(pathname);
+
+  const [openGroup, setOpenGroup] = useState(activeGroup);
+
+  useEffect(() => {
+    setOpenGroup(activeGroup);
+  }, [activeGroup]);
 
   return (
     <aside className="flex h-full w-72 flex-col border-r border-neutral-200 bg-white">
@@ -219,7 +250,11 @@ export default function AdminSidebar({
                   className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
                 >
                   <span className="flex items-center gap-3">
-                    <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} />
+                    <Icon
+                      className="h-[18px] w-[18px]"
+                      strokeWidth={1.8}
+                    />
+
                     <span>{group.label}</span>
                   </span>
 
@@ -233,20 +268,27 @@ export default function AdminSidebar({
 
                 {isOpen && (
                   <div className="ml-4 border-l border-neutral-200 py-1 pl-3">
-                    {group.items.map((item) => (
-                      <a
-                        key={item.href}
-                        href={item.href}
-                        onClick={onNavigate}
-                        className={`block rounded-md px-3 py-2 text-sm transition ${
-                          item.href === "/admin"
-                            ? "bg-neutral-100 font-medium text-neutral-950"
-                            : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-950"
-                        }`}
-                      >
-                        {item.label}
-                      </a>
-                    ))}
+                    {group.items.map((item) => {
+                      const isActive =
+                        pathname === item.href ||
+                        (item.href !== "/admin" &&
+                          pathname.startsWith(`${item.href}/`));
+
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={onNavigate}
+                          className={`block rounded-md px-3 py-2 text-sm transition ${
+                            isActive
+                              ? "bg-neutral-100 font-medium text-neutral-950"
+                              : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-950"
+                          }`}
+                        >
+                          {item.label}
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
               </div>
