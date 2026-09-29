@@ -1,4 +1,5 @@
 import { dashboardRepository } from "@/features/dashboard/repositories/dashboard.repository";
+import type { DateRange } from "@/lib/admin/query/date-range.schema";
 
 export const dashboardService = {
   async getSummary() {
@@ -14,13 +15,13 @@ export const dashboardService = {
     };
   },
 
-  async getOverview() {
+  async getOverview(dateRange: DateRange = {}) {
     const [summary, aov, topProducts, recentOrders, lowStock] =
       await Promise.all([
-        dashboardRepository.getSummary(),
-        dashboardRepository.getAov(),
-        dashboardRepository.getTopProducts(5),
-        dashboardRepository.getRecentOrders(5),
+        dashboardRepository.getSummary(dateRange),
+        dashboardRepository.getAov(dateRange),
+        dashboardRepository.getTopProducts(5, dateRange),
+        dashboardRepository.getRecentOrders(5, dateRange),
         dashboardRepository.getLowStock(10),
       ]);
 

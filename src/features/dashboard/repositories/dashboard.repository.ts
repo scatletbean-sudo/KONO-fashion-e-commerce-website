@@ -1,9 +1,41 @@
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import type { DateRange } from "@/lib/admin/query/date-range.schema";
 
-const EXCLUDED_ORDER_STATUSES = ["CANCELLED", "REFUNDED"] as const;
+const EXCLUDED_ORDER_STATUSES = [
+  "CANCELLED",
+  "REFUNDED",
+] as const;
+
+function getOrderDateFilter(dateRange: DateRange = {}) {
+  const dateFrom = dateRange.dateFrom
+    ? new Date(`${dateRange.dateFrom}T00:00:00+07:00`)
+    : undefined;
+
+  const dateToExclusive = dateRange.dateTo
+    ? new Date(`${dateRange.dateTo}T00:00:00+07:00`)
+    : undefined;
+
+  if (dateToExclusive) {
+    dateToExclusive.setUTCDate(dateToExclusive.getUTCDate() + 1);
+  }
+
+  if (!dateFrom && !dateToExclusive) {
+    return {};
+  }
+
+  return {
+    createdAt: {
+      ...(dateFrom ? { gte: dateFrom } : {}),
+      ...(dateToExclusive ? { lt: dateToExclusive } : {}),
+    },
+  };
+}
 
 export const dashboardRepository = {
-  async getSummary() {
+  async getSummary(dateRange: DateRange = {}) {
+    const orderDateFilter = getOrderDateFilter(dateRange);
+
     const [
       ordersCount,
       customersCount,
@@ -14,6 +46,7 @@ export const dashboardRepository = {
     ] = await Promise.all([
       prisma.order.count({
         where: {
+          ...orderDateFilter,
           status: {
             notIn: [...EXCLUDED_ORDER_STATUSES],
           },
@@ -23,6 +56,9 @@ export const dashboardRepository = {
       prisma.user.count({
         where: {
           role: "CUSTOMER",
+          ...(dateRange.dateFrom || dateRange.dateTo
+            ? getOrderDateFilter(dateRange)
+            : {}),
         },
       }),
 
@@ -32,6 +68,7 @@ export const dashboardRepository = {
         },
         where: {
           order: {
+            ...orderDateFilter,
             status: {
               notIn: [...EXCLUDED_ORDER_STATUSES],
             },
@@ -45,6 +82,9 @@ export const dashboardRepository = {
         },
         where: {
           status: "PAID",
+          ...(dateRange.dateFrom || dateRange.dateTo
+            ? getOrderDateFilter(dateRange)
+            : {}),
         },
       }),
 
@@ -72,7 +112,9 @@ export const dashboardRepository = {
     };
   },
 
-  async getAov() {
+  async getAov(dateRange: DateRange = {}) {
+    const orderDateFilter = getOrderDateFilter(dateRange);
+
     const [revenue, paidOrdersCount] = await Promise.all([
       prisma.payment.aggregate({
         _sum: {
@@ -80,12 +122,14 @@ export const dashboardRepository = {
         },
         where: {
           status: "PAID",
+          ...orderDateFilter,
         },
       }),
 
       prisma.payment.count({
         where: {
           status: "PAID",
+          ...orderDateFilter,
         },
       }),
     ]);
@@ -97,7 +141,12 @@ export const dashboardRepository = {
       : 0;
   },
 
-  async getTopProducts(limit = 5) {
+  async getTopProducts(
+    limit = 5,
+    dateRange: DateRange = {},
+  ) {
+    const orderDateFilter = getOrderDateFilter(dateRange);
+
     const grouped = await prisma.orderItem.groupBy({
       by: ["productId"],
       _sum: {
@@ -106,6 +155,7 @@ export const dashboardRepository = {
       },
       where: {
         order: {
+          ...orderDateFilter,
           status: {
             notIn: [...EXCLUDED_ORDER_STATUSES],
           },
@@ -157,12 +207,21 @@ export const dashboardRepository = {
     });
   },
 
-  async getRecentOrders(limit = 5) {
+  async getRecentOrders(
+    limit = 5,
+    dateRange: DateRange = {},
+  ) {
+    const orderDateFilter = getOrderDateFilter(dateRange);
+
     return prisma.order.findMany({
+      where: orderDateFilter,
+
       orderBy: {
         createdAt: "desc",
       },
+
       take: limit,
+
       select: {
         id: true,
         orderNumber: true,
