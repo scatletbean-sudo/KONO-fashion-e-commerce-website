@@ -56,7 +56,8 @@ export async function POST(request: Request) {
     });
 
     return response;
-  } catch {
+  } catch (error) {
+    console.error("LOGIN ERROR:", error);
     return NextResponse.json(
       {
         error: "Invalid email or password",
