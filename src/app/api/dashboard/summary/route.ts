@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 
+import { dateRangeSchema } from "@/lib/admin/query/date-range.schema";
 import { dashboardService } from "@/features/dashboard/services/dashboard.service";
 import { getAdminSession } from "@/lib/auth/admin-guard";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getAdminSession();
 
@@ -14,7 +15,24 @@ export async function GET() {
       );
     }
 
-    const overview = await dashboardService.getOverview();
+    const { searchParams } = new URL(request.url);
+
+    const result = dateRangeSchema.safeParse({
+      dateFrom: searchParams.get("dateFrom") ?? undefined,
+      dateTo: searchParams.get("dateTo") ?? undefined,
+    });
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid query parameters",
+          issues: result.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
+
+    const overview = await dashboardService.getOverview(result.data);
 
     return NextResponse.json(overview, { status: 200 });
   } catch (error) {
