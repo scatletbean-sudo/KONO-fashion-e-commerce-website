@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 
+const EXCLUDED_ORDER_STATUSES = ["CANCELLED", "REFUNDED"] as const;
+
 export const dashboardRepository = {
   async getSummary() {
     const [
@@ -10,7 +12,13 @@ export const dashboardRepository = {
       lowStockResult,
       inventoryOutOfStock,
     ] = await Promise.all([
-      prisma.order.count(),
+      prisma.order.count({
+        where: {
+          status: {
+            notIn: [...EXCLUDED_ORDER_STATUSES],
+          },
+        },
+      }),
 
       prisma.user.count({
         where: {
@@ -22,11 +30,21 @@ export const dashboardRepository = {
         _sum: {
           quantity: true,
         },
+        where: {
+          order: {
+            status: {
+              notIn: [...EXCLUDED_ORDER_STATUSES],
+            },
+          },
+        },
       }),
 
-      prisma.order.aggregate({
+      prisma.payment.aggregate({
         _sum: {
-          totalAmount: true,
+          amount: true,
+        },
+        where: {
+          status: "PAID",
         },
       }),
 
@@ -48,7 +66,7 @@ export const dashboardRepository = {
       ordersCount,
       customersCount,
       productsSold: productsSold._sum.quantity ?? 0,
-      revenue: revenue._sum.totalAmount ?? 0,
+      revenue: revenue._sum.amount ?? 0,
       inventoryLowStock: Number(lowStockResult[0]?.count ?? 0),
       inventoryOutOfStock,
     };

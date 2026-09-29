@@ -1,4 +1,12 @@
-export default function AdminPage() {
+import { dashboardService } from "@/features/dashboard/services/dashboard.service";
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat("vi-VN").format(value);
+};
+
+export default async function AdminPage() {
+  const summary = await dashboardService.getSummary();
+
   return (
     <section>
       <div className="mb-8">
@@ -23,7 +31,7 @@ export default function AdminPage() {
           </p>
 
           <p className="mt-3 text-2xl font-medium text-neutral-950">
-            —
+            {formatCurrency(summary.revenue)} ₫
           </p>
         </div>
 
@@ -33,7 +41,7 @@ export default function AdminPage() {
           </p>
 
           <p className="mt-3 text-2xl font-medium text-neutral-950">
-            —
+            {summary.ordersCount}
           </p>
         </div>
 
@@ -43,7 +51,7 @@ export default function AdminPage() {
           </p>
 
           <p className="mt-3 text-2xl font-medium text-neutral-950">
-            —
+            {summary.productsSold}
           </p>
         </div>
 
@@ -53,7 +61,7 @@ export default function AdminPage() {
           </p>
 
           <p className="mt-3 text-2xl font-medium text-neutral-950">
-            —
+            {summary.customersCount}
           </p>
         </div>
       </div>
