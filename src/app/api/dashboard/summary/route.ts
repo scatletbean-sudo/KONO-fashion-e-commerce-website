@@ -1,20 +1,27 @@
 import { NextResponse } from "next/server";
 
 import { dashboardService } from "@/features/dashboard/services/dashboard.service";
-import { requireAdminSession } from "@/lib/auth/admin-guard";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 
 export async function GET() {
   try {
-    await requireAdminSession();
+    const session = await getAdminSession();
 
-    const summary = await dashboardService.getSummary();
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
 
-    return NextResponse.json(summary, { status: 200 });
+    const overview = await dashboardService.getOverview();
+
+    return NextResponse.json(overview, { status: 200 });
   } catch (error) {
-    console.error("DASHBOARD SUMMARY ERROR:", error);
+    console.error("DASHBOARD OVERVIEW ERROR:", error);
 
     return NextResponse.json(
-      { error: "Failed to load dashboard summary" },
+      { error: "Failed to load dashboard overview" },
       { status: 500 },
     );
   }

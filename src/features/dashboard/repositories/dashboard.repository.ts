@@ -71,4 +71,142 @@ export const dashboardRepository = {
       inventoryOutOfStock,
     };
   },
+
+  async getAov() {
+    const [revenue, paidOrdersCount] = await Promise.all([
+      prisma.payment.aggregate({
+        _sum: {
+          amount: true,
+        },
+        where: {
+          status: "PAID",
+        },
+      }),
+
+      prisma.payment.count({
+        where: {
+          status: "PAID",
+        },
+      }),
+    ]);
+
+    const totalRevenue = revenue._sum.amount ?? 0;
+
+    return paidOrdersCount > 0
+      ? Math.round(totalRevenue / paidOrdersCount)
+      : 0;
+  },
+
+  async getTopProducts(limit = 5) {
+    const grouped = await prisma.orderItem.groupBy({
+      by: ["productId"],
+      _sum: {
+        quantity: true,
+        totalPrice: true,
+      },
+      where: {
+        order: {
+          status: {
+            notIn: [...EXCLUDED_ORDER_STATUSES],
+          },
+        },
+      },
+      orderBy: {
+        _sum: {
+          quantity: "desc",
+        },
+      },
+      take: limit,
+    });
+
+    if (grouped.length === 0) {
+      return [];
+    }
+
+    const productIds = grouped.map((item) => item.productId);
+
+    const products = await prisma.product.findMany({
+      where: {
+        id: {
+          in: productIds,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        status: true,
+      },
+    });
+
+    const productMap = new Map(
+      products.map((product) => [product.id, product]),
+    );
+
+    return grouped.map((item) => {
+      const product = productMap.get(item.productId);
+
+      return {
+        productId: item.productId,
+        name: product?.name ?? "Unknown Product",
+        slug: product?.slug ?? null,
+        status: product?.status ?? null,
+        quantitySold: item._sum.quantity ?? 0,
+        revenue: item._sum.totalPrice ?? 0,
+      };
+    });
+  },
+
+  async getRecentOrders(limit = 5) {
+    return prisma.order.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: limit,
+      select: {
+        id: true,
+        orderNumber: true,
+        customerName: true,
+        customerEmail: true,
+        status: true,
+        totalAmount: true,
+        currency: true,
+        createdAt: true,
+      },
+    });
+  },
+
+  async getLowStock(limit = 10) {
+    const rows = await prisma.$queryRaw<
+      Array<{
+        inventoryId: string;
+        variantId: string;
+        sku: string;
+        productId: string;
+        productName: string;
+        quantity: number;
+        lowStockAt: number;
+      }>
+    >`
+      SELECT
+        i.id AS "inventoryId",
+        pv.id AS "variantId",
+        pv.sku AS sku,
+        p.id AS "productId",
+        p.name AS "productName",
+        i.quantity AS quantity,
+        i."lowStockAt" AS "lowStockAt"
+      FROM "Inventory" i
+      INNER JOIN "ProductVariant" pv
+        ON pv.id = i."variantId"
+      INNER JOIN "Product" p
+        ON p.id = pv."productId"
+      WHERE i.quantity > 0
+        AND i.quantity <= i."lowStockAt"
+      ORDER BY i.quantity ASC, p.name ASC
+      LIMIT ${limit}
+    `;
+
+    return rows;
+  },
 };
