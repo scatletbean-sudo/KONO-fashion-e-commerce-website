@@ -1,11 +1,15 @@
 import { dashboardService } from "@/features/dashboard/services/dashboard.service";
+import DashboardStatCard from "@/components/admin/dashboard/DashboardStatCard";
+import TopProductsCard from "@/components/admin/dashboard/TopProductsCard";
+import RecentOrdersCard from "@/components/admin/dashboard/RecentOrdersCard";
+import LowStockCard from "@/components/admin/dashboard/LowStockCard";
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("vi-VN").format(value);
 };
 
 export default async function AdminPage() {
-  const summary = await dashboardService.getSummary();
+  const overview = await dashboardService.getOverview();
 
   return (
     <section>
@@ -24,46 +28,39 @@ export default async function AdminPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-neutral-200 bg-white p-5">
-          <p className="text-sm text-neutral-500">
-            Revenue
-          </p>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <DashboardStatCard
+          label="Revenue"
+          value={`${formatCurrency(overview.summary.revenue)} ₫`}
+        />
 
-          <p className="mt-3 text-2xl font-medium text-neutral-950">
-            {formatCurrency(summary.revenue)} ₫
-          </p>
-        </div>
+        <DashboardStatCard
+          label="Orders"
+          value={overview.summary.ordersCount.toString()}
+        />
 
-        <div className="rounded-xl border border-neutral-200 bg-white p-5">
-          <p className="text-sm text-neutral-500">
-            Orders
-          </p>
+        <DashboardStatCard
+          label="Products Sold"
+          value={overview.summary.productsSold.toString()}
+        />
 
-          <p className="mt-3 text-2xl font-medium text-neutral-950">
-            {summary.ordersCount}
-          </p>
-        </div>
+        <DashboardStatCard
+          label="Customers"
+          value={overview.summary.customersCount.toString()}
+        />
 
-        <div className="rounded-xl border border-neutral-200 bg-white p-5">
-          <p className="text-sm text-neutral-500">
-            Products Sold
-          </p>
+        <DashboardStatCard
+          label="AOV"
+          value={`${formatCurrency(overview.aov)} ₫`}
+        />
+      </div>
+       <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <TopProductsCard products={overview.topProducts} />
 
-          <p className="mt-3 text-2xl font-medium text-neutral-950">
-            {summary.productsSold}
-          </p>
-        </div>
-
-        <div className="rounded-xl border border-neutral-200 bg-white p-5">
-          <p className="text-sm text-neutral-500">
-            Customers
-          </p>
-
-          <p className="mt-3 text-2xl font-medium text-neutral-950">
-            {summary.customersCount}
-          </p>
-        </div>
+        <RecentOrdersCard orders={overview.recentOrders} />
+      </div>
+      <div className="mt-6">
+        <LowStockCard items={overview.lowStock} />
       </div>
     </section>
   );
