@@ -4,6 +4,8 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import { DateRangePicker } from "@/components/admin/DateRangePicker";
 
+import Link from "next/link";
+
 type OrderStatus =
   | "PENDING"
   | "CONFIRMED"
@@ -424,7 +426,12 @@ export default function OrdersList() {
                 >
                   <td className="px-5 py-4">
                     <p className="text-sm font-medium text-neutral-950">
-                      {order.orderNumber}
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {order.orderNumber}
+                      </Link>
                     </p>
 
                     <p className="mt-1 text-xs text-neutral-400">

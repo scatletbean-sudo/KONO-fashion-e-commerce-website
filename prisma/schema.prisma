@@ -107,12 +107,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  addresses Address[]
-  wishlist  Wishlist?
-  cart      Cart?
-  orders    Order[]
-  reviews   Review[]
-  sessions  Session[]
+  addresses          Address[]
+  wishlist           Wishlist?
+  cart               Cart?
+  orders             Order[]
+  reviews            Review[]
+  sessions           Session[]
+  orderStatusChanges OrderStatusHistory[]
 
   @@index([email])
   @@index([role])
@@ -526,14 +527,42 @@ model Order {
   user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   address Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
 
-  items        OrderItem[]
-  payment      Payment?
-  shipment     Shipment?
-  couponUsages CouponUsage[]
+  items         OrderItem[]
+  payment       Payment?
+  shipment      Shipment?
+  couponUsages  CouponUsage[]
+  statusHistory OrderStatusHistory[]
 
   @@index([userId])
   @@index([orderNumber])
   @@index([status])
+  @@index([createdAt])
+}
+
+// ======================================================
+// ORDER STATUS HISTORY
+// ======================================================
+
+model OrderStatusHistory {
+  id String @id @default(cuid())
+
+  orderId String
+
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+
+  note String?
+
+  changedById String?
+
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  changedBy User? @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([changedById])
   @@index([createdAt])
 }
 

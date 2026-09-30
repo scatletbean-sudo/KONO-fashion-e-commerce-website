@@ -53,3 +53,29 @@ export const orderListQuerySchema = z
   );
 
 export type OrderListQuery = z.infer<typeof orderListQuerySchema>;
+
+export const updateOrderStatusSchema = z.object({
+  status: z.enum(orderStatuses),
+
+  carrier: z
+    .string()
+    .trim()
+    .max(100)
+    .optional(),
+
+  trackingNumber: z
+    .string()
+    .trim()
+    .max(255)
+    .optional(),
+
+  note: z
+    .string()
+    .trim()
+    .max(500)
+    .optional(),
+});
+
+export type UpdateOrderStatusInput = z.infer<
+  typeof updateOrderStatusSchema
+>;

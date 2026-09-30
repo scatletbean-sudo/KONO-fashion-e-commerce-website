@@ -129,6 +129,21 @@ export const orderRepository = {
         couponUsages: true,
         user: true,
         address: true,
+        statusHistory: {
+          include: {
+           changedBy: {
+             select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              },
+             },
+           },
+        orderBy: {
+      createdAt: "asc",    
+      },
+    },
       },
     });
   },
