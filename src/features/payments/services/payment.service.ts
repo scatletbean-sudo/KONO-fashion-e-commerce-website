@@ -4,6 +4,10 @@ import {
   paymentRepository,
 } from "@/features/payments/repositories/payment.repository";
 
+import {
+  paymentCodeService,
+} from "@/features/payments/services/payment-code.service";
+
 import type {
   UpdatePaymentStatusInput,
 } from "@/features/payments/schemas/payment.schema";
@@ -28,6 +32,46 @@ export const paymentService = {
     }
 
     return payment;
+  },
+
+  async assignPaymentCode(paymentId: string) {
+    return prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.findUnique({
+        where: { id: paymentId },
+        include: {
+          order: true,
+        },
+      });
+
+      if (!payment) {
+        throw new Error("Payment not found");
+      }
+
+      if (payment.method !== "BANK_TRANSFER") {
+        throw new Error(
+          "Payment code is only available for bank transfer payments",
+        );
+      }
+
+      if (payment.paymentCode) {
+        return payment;
+      }
+
+      const paymentCode =
+        paymentCodeService.generate(
+          payment.order.orderNumber,
+        );
+
+      return tx.payment.update({
+        where: { id: paymentId },
+        data: {
+          paymentCode,
+        },
+        include: {
+          order: true,
+        },
+      });
+    });
   },
 
   async updateStatus(

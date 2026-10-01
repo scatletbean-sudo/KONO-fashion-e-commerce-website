@@ -610,6 +610,8 @@ model Payment {
 
   amount Int
 
+  paymentCode String? @unique
+
   transactionId     String?
   providerPaymentId String?
 
@@ -618,11 +620,43 @@ model Payment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  paymentEvents PaymentEvent[]
 
   @@index([transactionId])
   @@index([providerPaymentId])
   @@index([status])
+}
+
+// ======================================================
+// PAYMENT EVENT
+// ======================================================
+
+model PaymentEvent {
+  id String @id @default(cuid())
+
+  paymentId String
+
+  provider String
+
+  eventId String
+
+  transactionId String?
+
+  amount Int?
+
+  currency String?
+
+  payload Json?
+
+  createdAt DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, eventId])
+  @@index([paymentId])
+  @@index([transactionId])
+  @@index([createdAt])
 }
 
 // ======================================================
