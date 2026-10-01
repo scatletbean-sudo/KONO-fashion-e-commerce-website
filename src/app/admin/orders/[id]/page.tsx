@@ -3,6 +3,18 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import OrderStatusActions from "@/components/admin/orders/OrderStatusActions";
+
+
+type OrderStatus =
+  | "PENDING"
+  | "CONFIRMED"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED"
+  | "REFUNDED";
+
 
 type OrderItem = {
   id: string;
@@ -259,13 +271,13 @@ export default function AdminOrderDetailPage() {
           >
             Print
           </button>
-
-          <button
-            type="button"
-            className="rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-neutral-800"
-          >
-            Order Actions
-          </button>
+              <OrderStatusActions
+              orderId={order.id}
+              currentStatus={order.status as OrderStatus}
+              onUpdated={() => {
+                window.location.reload();
+              }}
+            />
         </div>
       </div>
 
