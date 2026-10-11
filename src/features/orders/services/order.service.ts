@@ -89,6 +89,7 @@ export const orderService = {
       const updatedOrder = await tx.order.update({
         where: {
           id: orderId,
+          status: order.status,
         },
         data: {
           status: input.status,

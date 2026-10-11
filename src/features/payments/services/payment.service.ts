@@ -131,7 +131,7 @@ export const paymentService = {
       }
 
       return tx.payment.update({
-        where: { id: paymentId },
+        where: { id: paymentId, status: payment.status },
         data: {
           status: input.status,
 

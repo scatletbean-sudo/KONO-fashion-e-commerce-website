@@ -6,6 +6,16 @@ type DbClient = Prisma.TransactionClient;
 const getDb = (db?: DbClient) => db ?? prisma;
 
 export const paymentRepository = {
+  async findByPaymentCode(paymentCode: string, db: DbClient) {
+    return db.payment.findUnique({ where: { paymentCode }, include: { order: true } });
+  },
+
+  async markPaidIfPending(id: string, eventId: string, transactionId: string | null, db: DbClient) {
+    return db.payment.updateMany({
+      where: { id, status: "PENDING", method: "BANK_TRANSFER" },
+      data: { status: "PAID", providerPaymentId: eventId, transactionId, paidAt: new Date() },
+    });
+  },
   async findById(id: string, db?: DbClient) {
     return getDb(db).payment.findUnique({
       where: { id },
