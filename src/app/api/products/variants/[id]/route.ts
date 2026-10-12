@@ -1,3 +1,5 @@
+import { catalogError, catalogResponse } from "@/features/products/public-catalog";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -22,41 +24,9 @@ export async function GET(
     const data =
       await variantService.getVariantById(id);
 
-    return NextResponse.json({
-      success: true,
-      data,
-    });
+    return catalogResponse("variants", data);
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === "Variant not found"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
-        { status: 404 },
-      );
-    }
-
-    if (error instanceof Error) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
-        { status: 400 },
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch variant",
-      },
-      { status: 500 },
-    );
+    return catalogError(error);
   }
 }
 
@@ -65,6 +35,15 @@ export async function PATCH(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { id } = await context.params;
 
     const body = await request.json();
@@ -146,6 +125,15 @@ export async function DELETE(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { id } = await context.params;
 
     const data =

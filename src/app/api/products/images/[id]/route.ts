@@ -1,3 +1,5 @@
+import { catalogError, catalogResponse } from "@/features/products/public-catalog";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -36,33 +38,9 @@ export async function GET(
     const data =
       await productImageService.getImageById(id);
 
-    return NextResponse.json({
-      success: true,
-      data,
-    });
+    return catalogResponse("images", data);
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Failed to fetch product image";
-
-    if (message === "Product image not found") {
-      return NextResponse.json(
-        {
-          success: false,
-          message,
-        },
-        { status: 404 },
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message,
-      },
-      { status: 500 },
-    );
+    return catalogError(error);
   }
 }
 
@@ -71,6 +49,15 @@ export async function PATCH(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { id } = await context.params;
 
     const body = await request.json();
@@ -132,6 +119,15 @@ export async function DELETE(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { id } = await context.params;
 
     const validation =

@@ -1,3 +1,5 @@
+import { catalogError, catalogResponse } from "@/features/products/public-catalog";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import { createCollectionSchema } from "@/features/products/collections/schemas/collection.schema";
@@ -9,26 +11,24 @@ export async function GET() {
     const collections =
       await collectionService.getCollections();
 
-    return NextResponse.json({
-      success: true,
-      data: collections,
-    });
+    return catalogResponse("collections", collections);
   } catch (error) {
-    console.error("GET /api/collections error:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch collections",
-      },
-      { status: 500 },
-    );
+    return catalogError(error);
   }
 }
 
 // POST /api/collections
 export async function POST(request: NextRequest) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json();
 
     const result =

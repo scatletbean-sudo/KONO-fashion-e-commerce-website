@@ -1,8 +1,8 @@
+import { catalogError, catalogResponse } from "@/features/products/public-catalog";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
-  colorIdSchema,
-  colorSlugSchema,
   createColorSchema,
 } from "@/features/products/colors/schemas/color.schema";
 
@@ -12,25 +12,23 @@ export async function GET() {
   try {
     const colors = await colorService.getColors();
 
-    return NextResponse.json({
-      success: true,
-      data: colors,
-    });
+    return catalogResponse("colors", colors);
   } catch (error) {
-    console.error("GET /api/colors error:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch colors",
-      },
-      { status: 500 },
-    );
+    return catalogError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json();
 
     const result = createColorSchema.safeParse(body);

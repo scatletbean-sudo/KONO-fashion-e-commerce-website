@@ -1,3 +1,4 @@
+import { validateInventoryValues } from "@/features/inventory/schemas/inventory-values.schema";
 import { Prisma } from "@/generated/prisma/client";
 
 import { productRepository } from "../repositories/product.repository";
@@ -57,6 +58,9 @@ export const productService = {
   // ======================================================
 
   async createProduct(data: CreateProductInput) {
+    for (const variant of data.variants) {
+      if (variant.inventory) validateInventoryValues(variant.inventory);
+    }
     const existingProduct =
       await productRepository.findBySlug(data.slug);
 
@@ -186,6 +190,9 @@ export const productService = {
 async updateProduct(
   data: UpdateProductInput,
 ) {
+  for (const variant of data.variants ?? []) {
+    if (variant.inventory) validateInventoryValues(variant.inventory);
+  }
   const { id, ...updateData } = data;
 
   // --------------------------------------------------

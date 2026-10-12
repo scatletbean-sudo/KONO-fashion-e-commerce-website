@@ -1,3 +1,5 @@
+import { catalogError, catalogResponse } from "@/features/products/public-catalog";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -15,33 +17,23 @@ export async function GET(request: NextRequest) {
       ? await variantService.getVariantsByProductId(productId)
       : await variantService.getVariants();
 
-    return NextResponse.json({
-      success: true,
-      data,
-    });
+    return catalogResponse("variants", data);
   } catch (error) {
-    if (error instanceof Error) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
-        { status: 400 },
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch variants",
-      },
-      { status: 500 },
-    );
+    return catalogError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json();
 
     const result = createVariantSchema.safeParse(body);

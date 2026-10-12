@@ -1,46 +1,26 @@
 import { z } from "zod";
+import { inventoryValuesSchema } from "./inventory-values.schema";
 
 const variantIdSchema = z
   .string()
   .trim()
   .min(1, "Variant ID is required");
 
-const quantitySchema = z
-  .number()
-  .int()
-  .min(0, "Quantity cannot be negative");
-
-const reservedSchema = z
-  .number()
-  .int()
-  .min(0, "Reserved quantity cannot be negative");
-
-const lowStockAtSchema = z
-  .number()
-  .int()
-  .min(0, "Low stock threshold cannot be negative");
-
 export const inventoryVariantIdSchema = z.object({
   variantId: variantIdSchema,
 });
 
-export const createInventorySchema = z.object({
+export const createInventorySchema = inventoryValuesSchema.safeExtend({
   variantId: variantIdSchema,
-
-  quantity: quantitySchema.default(0),
-
-  reserved: reservedSchema.default(0),
-
-  lowStockAt: lowStockAtSchema.default(5),
 });
 
 export const updateInventorySchema = z
   .object({
-    quantity: quantitySchema.optional(),
+    quantity: inventoryValuesSchema.shape.quantity.unwrap().optional(),
 
-    reserved: reservedSchema.optional(),
+    reserved: inventoryValuesSchema.shape.reserved.unwrap().optional(),
 
-    lowStockAt: lowStockAtSchema.optional(),
+    lowStockAt: inventoryValuesSchema.shape.lowStockAt.unwrap().optional(),
   })
   .refine(
     (data) => Object.keys(data).length > 0,

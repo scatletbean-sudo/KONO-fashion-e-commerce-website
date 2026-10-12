@@ -1,3 +1,4 @@
+import { validateInventoryValues } from "@/features/inventory/schemas/inventory-values.schema";
 import { Prisma } from "@/generated/prisma/client";
 
 import { inventoryRepository } from "../repositories/inventory.repository";
@@ -42,6 +43,7 @@ export const inventoryService = {
   },
 
   async createInventory(data: CreateInventoryInput) {
+    validateInventoryValues(data);
     const existingInventory =
       await inventoryRepository.findByVariantId(
         data.variantId,
@@ -100,6 +102,8 @@ export const inventoryService = {
         "Reserved quantity cannot be greater than quantity",
       );
     }
+
+    validateInventoryValues({ quantity, reserved, lowStockAt: data.lowStockAt ?? existingInventory.lowStockAt });
 
     const updateData: Prisma.InventoryUpdateInput = {
       quantity: data.quantity,

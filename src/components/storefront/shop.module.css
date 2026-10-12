@@ -1,0 +1,280 @@
+.shop,.productPage {
+  padding: 55px 4vw 90px;
+}
+
+.title {
+  margin-bottom: 45px;
+}
+
+.title h1 {
+  font-size: clamp(42px,7vw,112px);
+  letter-spacing: -.065em;
+  line-height: 1;
+  font-weight: 750;
+  margin: 22px 0;
+}
+
+.title>p:last-child {
+  font-size: 13px;
+  color: #666;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: end;
+  padding: 25px 0;
+  border-top: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.filters label {
+  font-size: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 100px;
+  flex: 1;
+}
+
+.filters .search {
+  flex: 2;
+  min-width: 180px;
+}
+
+.filters input,.filters select {
+  width: 100%;
+  border: 1px solid #e5e5e5;
+  border-radius: 0;
+  background: #fff;
+  color: #111;
+  min-height: 42px;
+  padding: 10px;
+  font-size: 12px;
+}
+
+.reset {
+  font-size: 10px;
+  padding: 15px 0;
+  text-decoration: underline!important;
+}
+
+.count {
+  font-size: 11px;
+  color: #666;
+  margin: 26px 0;
+}
+
+.notice {
+  border: 1px solid #e5e5e5;
+  padding: 18px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #666;
+  margin: 22px 0;
+}
+
+.breadcrumb {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 10px;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.breadcrumb a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0,1.2fr) minmax(0,1fr);
+  gap: 7vw;
+}
+
+.mainImage {
+  position: relative;
+  aspect-ratio: 3/4;
+  background: #f1f0ec;
+  overflow: hidden;
+}
+
+.thumbnails {
+  display: flex;
+  overflow-x: auto;
+  gap: 12px;
+  margin-top: 15px;
+  padding: 4px;
+}
+
+.thumbnails button {
+  position: relative;
+  min-width: 70px;
+  width: 80px;
+  aspect-ratio: 3/4;
+  background: #f1f0ec;
+  border: 1px solid transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.thumbnails button[aria-pressed=true] {
+  outline: 1px solid #111;
+  outline-offset: 2px;
+}
+
+.info {
+  padding: 20px 0;
+}
+
+.info h1 {
+  font-size: clamp(35px,4vw,68px);
+  font-weight: 650;
+  line-height: 1.05;
+  letter-spacing: -.055em;
+  margin: 20px 0;
+}
+
+.price {
+  font-size: 20px;
+  line-height: 1.8;
+  margin: 20px 0;
+}
+
+.price del {
+  font-size: 13px;
+  color: #666;
+  margin-left: 14px;
+}
+
+.description {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #666;
+  white-space: pre-wrap;
+}
+
+.info fieldset {
+  border: 0;
+  padding: 0;
+  margin: 28px 0;
+}
+
+.info legend {
+  font-size: 12px;
+  margin-bottom: 14px;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.options button {
+  min-height: 44px;
+  min-width: 48px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  padding: 10px 15px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.options button[aria-pressed=true] {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.options button:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.stock {
+  font-size: 12px;
+  margin: 25px 0;
+}
+
+.descriptionPanel {
+  border-top: 1px solid #e5e5e5;
+  padding: 24px 0;
+  margin-top: 30px;
+}
+
+.descriptionPanel summary {
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.descriptionPanel p {
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.9;
+  color: #666;
+  margin-top: 20px;
+}
+
+.related {
+  padding-top: 80px;
+}
+
+.shop a:focus-visible,.productPage a:focus-visible,.productPage button:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 4px;
+}
+
+@media(max-width:760px) {
+  .shop,.productPage {
+    padding: 35px 6vw 55px;
+  }
+  .title h1 {
+    font-size: clamp(34px,9vw,60px);
+  }
+  .filters {
+    gap: 15px;
+  }
+  .filters label {
+    min-width: calc(50% - 15px);
+  }
+  .filters .search {
+    min-width: 100%;
+  }
+  .detail {
+    grid-template-columns: minmax(0,1fr);
+    gap: 20px;
+  }
+  .info h1 {
+    font-size: 40px;
+  }
+  .related {
+    padding-top: 50px;
+  }
+  .mainImage {
+    aspect-ratio: 4/5;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  .shop *,.productPage * {
+    transition: none!important;
+    animation: none!important;
+  }
+}
+
+.grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+

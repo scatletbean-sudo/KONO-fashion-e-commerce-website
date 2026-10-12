@@ -1,3 +1,5 @@
+import { catalogError, catalogResponse } from "@/features/products/public-catalog";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import { categoryService } from "@/features/products/categories/services/category.service";
@@ -20,49 +22,9 @@ export async function GET(
     const category =
       await categoryService.getCategoryById(id);
 
-    return NextResponse.json({
-      success: true,
-      data: category,
-    });
+    return catalogResponse("categories", category);
   } catch (error) {
-    console.error(
-      "GET /api/categories/[id] error:",
-      error,
-    );
-
-    if (
-      error instanceof Error &&
-      error.message === "Category ID is required"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
-        { status: 400 },
-      );
-    }
-
-    if (
-      error instanceof Error &&
-      error.message === "Category not found"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
-        { status: 404 },
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch category",
-      },
-      { status: 500 },
-    );
+    return catalogError(error);
   }
 }
 
@@ -72,6 +34,15 @@ export async function PATCH(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { id } = await context.params;
 
     const body = await request.json();
@@ -178,6 +149,15 @@ export async function DELETE(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { id } = await context.params;
 
     const category =

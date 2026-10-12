@@ -1,3 +1,5 @@
+import { catalogError, catalogResponse } from "@/features/products/public-catalog";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import { categoryService } from "@/features/products/categories/services/category.service";
@@ -8,26 +10,24 @@ export async function GET() {
   try {
     const categories = await categoryService.getCategories();
 
-    return NextResponse.json({
-      success: true,
-      data: categories,
-    });
+    return catalogResponse("categories", categories);
   } catch (error) {
-    console.error("GET /api/categories error:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch categories",
-      },
-      { status: 500 },
-    );
+    return catalogError(error);
   }
 }
 
 // POST /api/categories
 export async function POST(request: NextRequest) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json();
 
     const result = createCategorySchema.safeParse(body);

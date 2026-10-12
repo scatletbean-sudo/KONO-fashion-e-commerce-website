@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { inventoryValuesSchema } from "@/features/inventory/schemas/inventory-values.schema";
 
 const idSchema = z
   .string()
@@ -11,25 +12,7 @@ const skuSchema = z
   .min(1, "SKU is required")
   .max(100, "SKU is too long");
 
-const inventorySchema = z.object({
-  quantity: z
-    .number()
-    .int()
-    .min(0, "Quantity cannot be negative")
-    .default(0),
-
-  reserved: z
-    .number()
-    .int()
-    .min(0, "Reserved cannot be negative")
-    .default(0),
-
-  lowStockAt: z
-    .number()
-    .int()
-    .min(0, "Low stock threshold cannot be negative")
-    .default(5),
-});
+const inventorySchema = inventoryValuesSchema;
 
 export const createVariantSchema = z.object({
   productId: idSchema,
@@ -66,10 +49,13 @@ export const createVariantSchema = z.object({
 });
 
 export const updateVariantSchema = createVariantSchema
+  .omit({ productId: true, inventory: true })
   .partial()
   .extend({
     id: idSchema,
+    isActive: z.boolean().optional(),
   })
+  .strict()
   .refine(
     (data) => Object.keys(data).length > 1,
     {

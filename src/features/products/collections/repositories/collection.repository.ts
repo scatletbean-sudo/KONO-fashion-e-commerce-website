@@ -4,7 +4,12 @@ import { prisma } from "@/lib/db/prisma";
 const collectionInclude = {
   products: {
     include: {
-      product: true,
+      product: {
+        include: {
+          images: { orderBy: { sortOrder: "asc" } },
+          variants: { include: { color: true, size: true, inventory: true } },
+        },
+      },
     },
   },
 } satisfies Prisma.CollectionInclude;

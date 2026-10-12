@@ -1,3 +1,5 @@
+import { catalogError, catalogResponse } from "@/features/products/public-catalog";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -10,23 +12,23 @@ export async function GET() {
   try {
     const sizes = await sizeService.getSizes();
 
-    return NextResponse.json({
-      success: true,
-      data: sizes,
-    });
-  } catch {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to get sizes",
-      },
-      { status: 500 },
-    );
+    return catalogResponse("sizes", sizes);
+  } catch (error) {
+    return catalogError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json();
 
     const validation = createSizeSchema.safeParse(body);

@@ -1,3 +1,5 @@
+import { catalogError, catalogResponse } from "@/features/products/public-catalog";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -18,36 +20,28 @@ export async function GET(request: NextRequest) {
           productId,
         );
 
-      return NextResponse.json({
-        success: true,
-        data,
-      });
+      return catalogResponse("images", data);
     }
 
     const data = await productImageService.getImages();
 
-    return NextResponse.json({
-      success: true,
-      data,
-    });
+    return catalogResponse("images", data);
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Failed to fetch product images";
-
-    return NextResponse.json(
-      {
-        success: false,
-        message,
-      },
-      { status: 500 },
-    );
+    return catalogError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json();
 
     const result =

@@ -1,3 +1,5 @@
+import { updateVariantSchema } from "../schemas/variant.schema";
+import { validateInventoryValues } from "@/features/inventory/schemas/inventory-values.schema";
 import { Prisma } from "@/generated/prisma/client";
 
 import { variantRepository } from "../repositories/variant.repository";
@@ -49,6 +51,7 @@ export const variantService = {
   },
 
   async createVariant(data: CreateVariantInput) {
+    if (data.inventory) validateInventoryValues(data.inventory);
     // Check SKU
     const existingVariant =
       await variantRepository.findBySku(data.sku);
@@ -108,7 +111,7 @@ export const variantService = {
   },
 
   async updateVariant(data: UpdateVariantInput) {
-    const { id, ...updateData } = data;
+    const { id, ...updateData } = updateVariantSchema.parse(data);
 
     const existingVariant =
       await variantRepository.findById(id);
@@ -205,6 +208,8 @@ export const variantService = {
     if (!existingVariant.inventory) {
       throw new Error("Inventory not found");
     }
+
+    validateInventoryValues({ quantity, reserved: reserved ?? existingVariant.inventory.reserved, lowStockAt: lowStockAt ?? existingVariant.inventory.lowStockAt });
 
     return variantRepository.update(variantId, {
       inventory: {

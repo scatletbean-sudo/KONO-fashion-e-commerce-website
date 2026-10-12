@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { inventoryValuesSchema } from "@/features/inventory/schemas/inventory-values.schema";
 
 // ======================================================
 // COMMON
@@ -83,27 +84,7 @@ export const productVariantSchema = z.object({
     .boolean()
     .default(true),
 
-  inventory: z
-    .object({
-      quantity: z
-        .number()
-        .int()
-        .min(0)
-        .default(0),
-
-      reserved: z
-        .number()
-        .int()
-        .min(0)
-        .default(0),
-
-      lowStockAt: z
-        .number()
-        .int()
-        .min(0)
-        .default(5),
-    })
-    .optional(),
+  inventory: inventoryValuesSchema.optional(),
 });
 
 // ======================================================

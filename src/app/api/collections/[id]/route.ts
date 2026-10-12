@@ -1,3 +1,5 @@
+import { catalogError, catalogResponse } from "@/features/products/public-catalog";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -37,36 +39,9 @@ export async function GET(
     const collection =
       await collectionService.getCollectionById(id);
 
-    return NextResponse.json({
-      success: true,
-      data: collection,
-    });
+    return catalogResponse("collections", collection);
   } catch (error) {
-    console.error(
-      "GET /api/collections/:id error:",
-      error,
-    );
-
-    if (
-      error instanceof Error &&
-      error.message === "Collection not found"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
-        { status: 404 },
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch collection",
-      },
-      { status: 500 },
-    );
+    return catalogError(error);
   }
 }
 
@@ -76,6 +51,15 @@ export async function PATCH(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { id } = await context.params;
 
     const body = await request.json();
@@ -155,6 +139,15 @@ export async function DELETE(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { id } = await context.params;
 
     const validation =

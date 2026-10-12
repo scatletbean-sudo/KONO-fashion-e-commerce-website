@@ -1,3 +1,4 @@
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -19,6 +20,15 @@ export async function GET(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { variantId } = await context.params;
 
     const inventory =
@@ -64,6 +74,15 @@ export async function PATCH(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { variantId } = await context.params;
 
     const inventory =
@@ -145,6 +164,15 @@ export async function DELETE(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { variantId } = await context.params;
 
     const inventory =

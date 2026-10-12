@@ -1,3 +1,5 @@
+import { catalogError, catalogResponse } from "@/features/products/public-catalog";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import { productService } from "@/features/products/services/product.service";
@@ -19,46 +21,9 @@ export async function GET(
 
     const product = await productService.getProductById(id);
 
-    return NextResponse.json({
-      success: true,
-      data: product,
-    });
+    return catalogResponse("products", product);
   } catch (error) {
-    console.error("GET /api/products/[id] error:", error);
-
-    if (
-      error instanceof Error &&
-      error.message === "Product ID is required"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
-        { status: 400 },
-      );
-    }
-
-    if (
-      error instanceof Error &&
-      error.message === "Product not found"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
-        { status: 404 },
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch product",
-      },
-      { status: 500 },
-    );
+    return catalogError(error);
   }
 }
 
@@ -68,6 +33,15 @@ export async function PATCH(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { id } = await context.params;
 
     const body = await request.json();
@@ -139,6 +113,15 @@ export async function DELETE(
   context: RouteContext,
 ) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { id } = await context.params;
 
     const product = await productService.deleteProduct(id);

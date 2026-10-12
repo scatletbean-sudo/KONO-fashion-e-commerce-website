@@ -1,3 +1,5 @@
+import { catalogError, catalogResponse } from "@/features/products/public-catalog";
+import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
 
 import { productService } from "@/features/products/services/product.service";
@@ -7,25 +9,23 @@ export async function GET() {
   try {
     const products = await productService.getProducts();
 
-    return NextResponse.json({
-      success: true,
-      data: products,
-    });
+    return catalogResponse("products", products);
   } catch (error) {
-    console.error("GET /api/products error:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch products",
-      },
-      { status: 500 },
-    );
+    return catalogError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json();
 
     const result = createProductSchema.safeParse(body);
