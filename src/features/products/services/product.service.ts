@@ -2,6 +2,8 @@ import { validateInventoryValues } from "@/features/inventory/schemas/inventory-
 import { Prisma } from "@/generated/prisma/client";
 
 import { productRepository } from "../repositories/product.repository";
+import { validateProductUpdate } from "../attributes/product-update-validation";
+import { rejectInlineImages } from "../images/media-policy";
 
 import type {
   CreateProductInput,
@@ -58,6 +60,7 @@ export const productService = {
   // ======================================================
 
   async createProduct(data: CreateProductInput) {
+    rejectInlineImages(data.images);
     for (const variant of data.variants) {
       if (variant.inventory) validateInventoryValues(variant.inventory);
     }
@@ -67,6 +70,7 @@ export const productService = {
     if (existingProduct) {
       throw new Error("Product slug already exists");
     }
+
 
     const createData: Prisma.ProductCreateInput = {
       name: data.name,
@@ -122,24 +126,6 @@ export const productService = {
           : undefined,
 
       // --------------------------------------------------
-      // IMAGES
-      // --------------------------------------------------
-
-      images:
-        data.images.length > 0
-          ? {
-              create: data.images.map((image) => ({
-                url: image.url,
-                alt: image.alt,
-
-                sortOrder: image.sortOrder,
-
-                isPrimary: image.isPrimary,
-              })),
-            }
-          : undefined,
-
-      // --------------------------------------------------
       // VARIANTS + INVENTORY
       // --------------------------------------------------
 
@@ -180,6 +166,9 @@ export const productService = {
           : undefined,
     };
 
+    if (data.categoryIds.length || data.collectionIds.length || data.variants.some(variant => variant.colorId || variant.sizeId)) {
+      return productRepository.createWithReferences(createData, data);
+    }
     return productRepository.create(createData);
   },
 
@@ -193,6 +182,7 @@ async updateProduct(
   for (const variant of data.variants ?? []) {
     if (variant.inventory) validateInventoryValues(variant.inventory);
   }
+  rejectInlineImages(data.images, true);
   const { id, ...updateData } = data;
 
   // --------------------------------------------------
@@ -229,6 +219,10 @@ async updateProduct(
   // --------------------------------------------------
 
   await productRepository.transaction(async (tx) => {
+    await productRepository.lockForUpdate(tx, id, updateData.status === "ACTIVE");
+    const current = await productRepository.findById(id, tx);
+    if (!current) throw new Error("Product not found");
+    await validateProductUpdate(current, data, tx);
     // ==================================================
     // 1. UPDATE PRODUCT BASIC INFORMATION
     // ==================================================
@@ -327,30 +321,6 @@ async updateProduct(
             }),
           ),
           skipDuplicates: true,
-        });
-      }
-    }
-
-    // ==================================================
-    // 4. IMAGES
-    // ==================================================
-
-    if (updateData.images !== undefined) {
-      await tx.productImage.deleteMany({
-        where: {
-          productId: id,
-        },
-      });
-
-      if (updateData.images.length > 0) {
-        await tx.productImage.createMany({
-          data: updateData.images.map((image) => ({
-            productId: id,
-            url: image.url,
-            alt: image.alt,
-            sortOrder: image.sortOrder,
-            isPrimary: image.isPrimary,
-          })),
         });
       }
     }

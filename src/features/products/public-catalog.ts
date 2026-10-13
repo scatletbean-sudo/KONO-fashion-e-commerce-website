@@ -44,7 +44,7 @@ function project(resource: CatalogResource, value: unknown, nested = false): Row
     }
     case "images":
       if (!nested && row(source.product).status !== "ACTIVE") return null;
-      return pick(source, ["id", "productId", "url", "alt", "sortOrder", "isPrimary"]);
+      return pick(source, ["id", "productId", "url", "alt", "sortOrder", "isPrimary", "imageType", "width", "height"]);
     case "categories":
     case "collections": {
       if (source.isActive !== true) return null;

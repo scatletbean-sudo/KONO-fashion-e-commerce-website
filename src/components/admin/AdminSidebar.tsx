@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useAdminPathname } from "./useAdminPathname";
+import { useState } from "react";
 import {
   BarChart3,
   ChevronDown,
@@ -74,11 +74,6 @@ const menuGroups: MenuGroup[] = [
     items: [
       { label: "All Products", href: "/admin/products" },
       { label: "Create Product", href: "/admin/products/create" },
-      { label: "Categories", href: "/admin/products/categories" },
-      { label: "Collections", href: "/admin/products/collections" },
-      { label: "Colors", href: "/admin/products/colors" },
-      { label: "Sizes", href: "/admin/products/sizes" },
-      { label: "Product Reviews", href: "/admin/products/reviews" },
     ],
   },
 
@@ -208,15 +203,15 @@ const group = menuGroups.find((group) =>
 export default function AdminSidebar({
   onNavigate,
 }: AdminSidebarProps) {
-  const pathname = usePathname();
+  const pathname = useAdminPathname();
 
-  const activeGroup = getActiveGroup(pathname);
+  const activeGroup = pathname ? getActiveGroup(pathname) : "";
 
-  const [openGroup, setOpenGroup] = useState(activeGroup);
-
-  useEffect(() => {
-    setOpenGroup(activeGroup);
-  }, [activeGroup]);
+  const [expanded, setExpanded] = useState<{ pathname: string | null; group: string } | null>(null);
+  const openGroup = expanded?.pathname === pathname ? expanded.group : activeGroup;
+  const activeHref = menuGroups.flatMap(group => group.items)
+    .filter(item => pathname === item.href || (item.href !== "/admin" && pathname?.startsWith(`${item.href}/`)))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
     <aside className="flex h-full w-72 flex-col border-r border-neutral-200 bg-white">
@@ -245,7 +240,7 @@ export default function AdminSidebar({
                 <button
                   type="button"
                   onClick={() =>
-                    setOpenGroup(isOpen ? "" : group.label)
+                    setExpanded({ pathname, group: isOpen ? "" : group.label })
                   }
                   className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
                 >
@@ -269,15 +264,13 @@ export default function AdminSidebar({
                 {isOpen && (
                   <div className="ml-4 border-l border-neutral-200 py-1 pl-3">
                     {group.items.map((item) => {
-                      const isActive =
-                        pathname === item.href ||
-                        (item.href !== "/admin" &&
-                          pathname.startsWith(`${item.href}/`));
+                      const isActive = item.href === activeHref;
 
                       return (
                         <Link
                           key={item.href}
                           href={item.href}
+                          aria-current={isActive ? "page" : undefined}
                           onClick={onNavigate}
                           className={`block rounded-md px-3 py-2 text-sm transition ${
                             isActive

@@ -1,12 +1,17 @@
 import { Prisma } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
+import { deleteUnusedAttribute } from "../../attributes/guarded-delete";
+import { writeWithUniqueAttributeName } from "../../attributes/unique-name-write";
 
 const sizeInclude = {
   variants: true,
 } satisfies Prisma.SizeInclude;
 
 export const sizeRepository = {
+  async findByName(name: string, excludeId?: string) {
+    return prisma.size.findFirst({ where: { name: { equals: name, mode: "insensitive" }, ...(excludeId ? { id: { not: excludeId } } : {}) }, select: { id: true } });
+  },
   async findAll() {
     return prisma.size.findMany({
       orderBy: {
@@ -31,26 +36,24 @@ export const sizeRepository = {
   },
 
   async create(data: Prisma.SizeCreateInput) {
-    return prisma.size.create({
+    return writeWithUniqueAttributeName("size", data.name, undefined, tx => tx.size.create({
       data,
       include: sizeInclude,
-    });
+    }));
   },
 
   async update(
     id: string,
     data: Prisma.SizeUpdateInput,
   ) {
-    return prisma.size.update({
+    return writeWithUniqueAttributeName("size", data.name, id, tx => tx.size.update({
       where: { id },
       data,
       include: sizeInclude,
-    });
+    }));
   },
 
   async delete(id: string) {
-    return prisma.size.delete({
-      where: { id },
-    });
+    return deleteUnusedAttribute("size", id);
   },
 };

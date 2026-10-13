@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  ...(process.env.KONO_MEDIA_DEV_RUNTIME === "1" ? { distDir: ".next-media-dev" } : {}),
 };
 
 export default nextConfig;

@@ -1,6 +1,7 @@
 import { Prisma } from "@/generated/prisma/client";
 
 import { sizeRepository } from "../repositories/size.repository";
+import { assertUniqueAttributeName } from "../../attributes/attribute-errors";
 
 import type {
   CreateSizeInput,
@@ -41,6 +42,7 @@ export const sizeService = {
   },
 
   async createSize(data: CreateSizeInput) {
+    await assertUniqueAttributeName("Size", data.name, undefined, sizeRepository.findByName);
     const existingSize =
       await sizeRepository.findBySlug(data.slug);
 
@@ -66,6 +68,8 @@ export const sizeService = {
     if (!existingSize) {
       throw new Error("Size not found");
     }
+
+    await assertUniqueAttributeName("Size", updateData.name, id, sizeRepository.findByName);
 
     if (updateData.slug) {
       const sizeWithSlug =

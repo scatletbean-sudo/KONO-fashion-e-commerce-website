@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { productService } from "@/features/products/services/product.service";
 import { createProductSchema } from "@/features/products/schemas/product.schema";
+import { attributeErrorResponse } from "@/lib/admin/api/attribute-errors";
+import { MediaError } from "@/features/products/images/media-policy";
+import { mediaErrorResponse } from "@/lib/admin/api/media";
 
 export async function GET() {
   try {
@@ -51,6 +54,9 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
+    const attributeError = attributeErrorResponse(error);
+    if (error instanceof MediaError) return mediaErrorResponse(error);
+    if (attributeError) return attributeError;
     console.error("POST /api/products error:", error);
 
     if (

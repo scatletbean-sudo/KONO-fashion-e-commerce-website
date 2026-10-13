@@ -1,3 +1,4 @@
+import { attributeErrorResponse } from "@/lib/admin/api/attribute-errors";
 import { catalogError, catalogResponse } from "@/features/products/public-catalog";
 import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
@@ -41,6 +42,8 @@ export async function GET(
 
     return catalogResponse("collections", collection);
   } catch (error) {
+    const attributeError = attributeErrorResponse(error);
+    if (attributeError) return attributeError;
     return catalogError(error);
   }
 }
@@ -91,6 +94,8 @@ export async function PATCH(
       data: collection,
     });
   } catch (error) {
+    const attributeError = attributeErrorResponse(error);
+    if (attributeError) return attributeError;
     console.error(
       "PATCH /api/collections/:id error:",
       error,
@@ -171,6 +176,8 @@ export async function DELETE(
       data: collection,
     });
   } catch (error) {
+    const attributeError = attributeErrorResponse(error);
+    if (attributeError) return attributeError;
     console.error(
       "DELETE /api/collections/:id error:",
       error,

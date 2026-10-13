@@ -1,6 +1,8 @@
 import { Prisma } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
+import { deleteUnusedAttribute } from "../../attributes/guarded-delete";
+import { writeWithUniqueAttributeName } from "../../attributes/unique-name-write";
 
 const categoryInclude = {
   parent: true,
@@ -24,6 +26,9 @@ const categoryInclude = {
 } satisfies Prisma.CategoryInclude;
 
 export const categoryRepository = {
+  async findByName(name: string, excludeId?: string) {
+    return prisma.category.findFirst({ where: { name: { equals: name, mode: "insensitive" }, ...(excludeId ? { id: { not: excludeId } } : {}) }, select: { id: true } });
+  },
   async findAll() {
     return prisma.category.findMany({
       orderBy: {
@@ -48,26 +53,24 @@ export const categoryRepository = {
   },
 
   async create(data: Prisma.CategoryCreateInput) {
-    return prisma.category.create({
+    return writeWithUniqueAttributeName("category", data.name, undefined, tx => tx.category.create({
       data,
       include: categoryInclude,
-    });
+    }));
   },
 
   async update(
     id: string,
     data: Prisma.CategoryUpdateInput,
   ) {
-    return prisma.category.update({
+    return writeWithUniqueAttributeName("category", data.name, id, tx => tx.category.update({
       where: { id },
       data,
       include: categoryInclude,
-    });
+    }));
   },
 
   async delete(id: string) {
-    return prisma.category.delete({
-      where: { id },
-    });
+    return deleteUnusedAttribute("category", id);
   },
 };

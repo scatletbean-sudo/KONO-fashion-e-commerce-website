@@ -94,6 +94,7 @@ export const productVariantSchema = z.object({
 export const updateProductVariantSchema =
   productVariantSchema.extend({
     id: idSchema.optional(),
+    isActive: z.boolean().optional(),
   });
 
 // ======================================================
@@ -191,6 +192,9 @@ export const updateProductSchema = createProductSchema
   .partial()
   .extend({
     id: idSchema,
+    // Creation defaults must never be applied to a partial update.
+    status: createProductSchema.shape.status.unwrap().optional(),
+    brand: createProductSchema.shape.brand.unwrap().optional(),
 
     // --------------------------------------------------
     // RELATIONS

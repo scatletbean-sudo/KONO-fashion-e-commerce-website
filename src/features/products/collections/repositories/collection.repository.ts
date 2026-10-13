@@ -1,5 +1,7 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import { deleteUnusedAttribute } from "../../attributes/guarded-delete";
+import { writeWithUniqueAttributeName } from "../../attributes/unique-name-write";
 
 const collectionInclude = {
   products: {
@@ -15,6 +17,9 @@ const collectionInclude = {
 } satisfies Prisma.CollectionInclude;
 
 export const collectionRepository = {
+  async findByName(name: string, excludeId?: string) {
+    return prisma.collection.findFirst({ where: { name: { equals: name, mode: "insensitive" }, ...(excludeId ? { id: { not: excludeId } } : {}) }, select: { id: true } });
+  },
   async findAll() {
     return prisma.collection.findMany({
       orderBy: {
@@ -39,26 +44,24 @@ export const collectionRepository = {
   },
 
   async create(data: Prisma.CollectionCreateInput) {
-    return prisma.collection.create({
+    return writeWithUniqueAttributeName("collection", data.name, undefined, tx => tx.collection.create({
       data,
       include: collectionInclude,
-    });
+    }));
   },
 
   async update(
     id: string,
     data: Prisma.CollectionUpdateInput,
   ) {
-    return prisma.collection.update({
+    return writeWithUniqueAttributeName("collection", data.name, id, tx => tx.collection.update({
       where: { id },
       data,
       include: collectionInclude,
-    });
+    }));
   },
 
   async delete(id: string) {
-    return prisma.collection.delete({
-      where: { id },
-    });
+    return deleteUnusedAttribute("collection", id);
   },
 };

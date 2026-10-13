@@ -1,5 +1,7 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import { deleteUnusedAttribute } from "../../attributes/guarded-delete";
+import { writeWithUniqueAttributeName } from "../../attributes/unique-name-write";
 
 const colorInclude = {
   variants: {
@@ -12,6 +14,9 @@ const colorInclude = {
 } satisfies Prisma.ColorInclude;
 
 export const colorRepository = {
+  async findByName(name: string, excludeId?: string) {
+    return prisma.color.findFirst({ where: { name: { equals: name, mode: "insensitive" }, ...(excludeId ? { id: { not: excludeId } } : {}) }, select: { id: true } });
+  },
   async findAll() {
     return prisma.color.findMany({
       orderBy: {
@@ -36,26 +41,24 @@ export const colorRepository = {
   },
 
   async create(data: Prisma.ColorCreateInput) {
-    return prisma.color.create({
+    return writeWithUniqueAttributeName("color", data.name, undefined, tx => tx.color.create({
       data,
       include: colorInclude,
-    });
+    }));
   },
 
   async update(
     id: string,
     data: Prisma.ColorUpdateInput,
   ) {
-    return prisma.color.update({
+    return writeWithUniqueAttributeName("color", data.name, id, tx => tx.color.update({
       where: { id },
       data,
       include: colorInclude,
-    });
+    }));
   },
 
   async delete(id: string) {
-    return prisma.color.delete({
-      where: { id },
-    });
+    return deleteUnusedAttribute("color", id);
   },
 };

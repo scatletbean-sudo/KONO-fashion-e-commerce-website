@@ -1,4 +1,5 @@
 import { categoryRepository } from "../repositories/category.repository";
+import { assertUniqueAttributeName } from "../../attributes/attribute-errors";
 
 import type {
   CreateCategoryInput,
@@ -39,6 +40,7 @@ export const categoryService = {
   },
 
   async createCategory(data: CreateCategoryInput) {
+    await assertUniqueAttributeName("Category", data.name, undefined, categoryRepository.findByName);
     const existingCategory =
       await categoryRepository.findBySlug(data.slug);
 
@@ -81,6 +83,8 @@ export const categoryService = {
     if (!existingCategory) {
       throw new Error("Category not found");
     }
+
+    await assertUniqueAttributeName("Category", updateData.name, id, categoryRepository.findByName);
 
     if (updateData.slug) {
       const categoryWithSlug =

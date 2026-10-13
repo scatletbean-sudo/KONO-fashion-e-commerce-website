@@ -22,6 +22,7 @@ for (const resource of ["categories", "collections"] as const) {
     };
     for (const admin of [false, true]) {
       const load = sourceLoader({
+        "@/generated/prisma/client": { Prisma: {} },
         "@/lib/db/prisma": { prisma: { [resource === "categories" ? "category" : "collection"]: {
           findMany: async (query: Parameters<typeof find>[0]) => [await find(query)], findUnique: find,
         } } },

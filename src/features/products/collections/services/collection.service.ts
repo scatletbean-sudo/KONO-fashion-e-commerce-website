@@ -1,6 +1,7 @@
 import { Prisma } from "@/generated/prisma/client";
 
 import { collectionRepository } from "../repositories/collection.repository";
+import { assertUniqueAttributeName } from "../../attributes/attribute-errors";
 
 import type {
   CreateCollectionInput,
@@ -43,6 +44,7 @@ export const collectionService = {
   },
 
   async createCollection(data: CreateCollectionInput) {
+    await assertUniqueAttributeName("Collection", data.name, undefined, collectionRepository.findByName);
     const existingCollection =
       await collectionRepository.findBySlug(data.slug);
 
@@ -73,6 +75,8 @@ export const collectionService = {
     if (!existingCollection) {
       throw new Error("Collection not found");
     }
+
+    await assertUniqueAttributeName("Collection", updateData.name, id, collectionRepository.findByName);
 
     if (updateData.slug) {
       const collectionWithSlug =

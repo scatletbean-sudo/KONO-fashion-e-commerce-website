@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { productService } from "@/features/products/services/product.service";
 import { updateProductSchema } from "@/features/products/schemas/product.schema";
+import { attributeErrorResponse } from "@/lib/admin/api/attribute-errors";
+import { MediaError } from "@/features/products/images/media-policy";
+import { mediaErrorResponse } from "@/lib/admin/api/media";
 
 type RouteContext = {
   params: Promise<{
@@ -69,6 +72,9 @@ export async function PATCH(
       data: product,
     });
   } catch (error) {
+    const attributeError = attributeErrorResponse(error);
+    if (error instanceof MediaError) return mediaErrorResponse(error);
+    if (attributeError) return attributeError;
     console.error("PATCH /api/products/[id] error:", error);
 
     if (
@@ -107,63 +113,27 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/products/:id
-export async function DELETE(
-  _request: NextRequest,
-  context: RouteContext,
-) {
+// Shared by the legacy and ADMIN routes. Permanent deletion is disabled until
+// dependency/history checks can prevent unsafe Prisma cascades.
+export async function DELETE() {
   try {
     const session = await getAdminSession();
-
     if (!session) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 },
       );
     }
-
-    const { id } = await context.params;
-
-    const product = await productService.deleteProduct(id);
-
-    return NextResponse.json({
-      success: true,
-      data: product,
-    });
-  } catch (error) {
-    console.error("DELETE /api/products/[id] error:", error);
-
-    if (
-      error instanceof Error &&
-      error.message === "Product ID is required"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
-        { status: 400 },
-      );
-    }
-
-    if (
-      error instanceof Error &&
-      error.message === "Product not found"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
-        { status: 404 },
-      );
-    }
-
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to delete product",
+        message: "Permanent product deletion is not supported yet. To archive a product, explicitly confirm and save ARCHIVED through PATCH instead.",
       },
+      { status: 409 },
+    );
+  } catch {
+    return NextResponse.json(
+      { success: false, message: "Could not verify admin access." },
       { status: 500 },
     );
   }

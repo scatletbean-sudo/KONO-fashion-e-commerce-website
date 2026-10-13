@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { imageTypeSchema } from "@/features/products/images/media-policy";
 
 // ACTIVE products and active variants are filtered by the public API.
 // Administrative status fields are intentionally absent from its contract.
@@ -6,7 +7,7 @@ const optionSchema = z.object({ id: z.string(), name: z.string(), slug: z.string
 export const productSchema = z.object({
     id: z.string(), name: z.string(), slug: z.string(), basePrice: z.number().int().nonnegative(),
     compareAtPrice: z.number().int().nonnegative().nullable().optional(),
-    images: z.array(z.object({ id: z.string(), url: z.string(), alt: z.string().nullable().optional(), sortOrder: z.number(), isPrimary: z.boolean() })),
+    images: z.array(z.object({ id: z.string(), url: z.string(), alt: z.string().nullable().optional(), sortOrder: z.number(), isPrimary: z.boolean(), imageType: imageTypeSchema.optional() })),
     variants: z.array(z.object({ id: z.string(), sku: z.string().optional(), priceOverride: z.number().int().nonnegative().nullable().optional(), inStock: z.boolean(), color: optionSchema.nullable().optional(), size: optionSchema.nullable().optional() })),
     description: z.string().nullable().optional(), shortDescription: z.string().nullable().optional(),
     metaTitle: z.string().nullable().optional(), metaDescription: z.string().nullable().optional(),

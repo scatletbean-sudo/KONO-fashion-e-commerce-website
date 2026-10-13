@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.next-media-dev/
 /out/
 
 # production
@@ -40,3 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /src/generated/prisma/
+
+# Local encrypted database preflight snapshots
+/.kono-backups/

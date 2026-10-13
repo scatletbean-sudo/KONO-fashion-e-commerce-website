@@ -5,7 +5,7 @@ import {
   Menu,
   Search,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { useAdminPathname } from "./useAdminPathname";
 
 type AdminHeaderProps = {
   onMenuClick?: () => void;
@@ -88,6 +88,7 @@ const pageTitles: Record<string, string> = {
 };
 
 function getPageTitle(pathname: string) {
+  if (/^\/admin\/products\/[^/]+\/edit$/.test(pathname)) return "Edit Product";
   if (pageTitles[pathname]) {
     return pageTitles[pathname];
   }
@@ -104,8 +105,8 @@ function getPageTitle(pathname: string) {
 export default function AdminHeader({
   onMenuClick,
 }: AdminHeaderProps) {
-  const pathname = usePathname();
-  const pageTitle = getPageTitle(pathname);
+  const pathname = useAdminPathname();
+  const pageTitle = pathname ? getPageTitle(pathname) : "Administration";
 
   return (
     <header className="flex h-20 shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-4 sm:px-6 lg:px-8">

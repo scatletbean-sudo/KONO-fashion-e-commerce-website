@@ -1,6 +1,7 @@
 import { Prisma } from "@/generated/prisma/client";
 
 import { colorRepository } from "../repositories/color.repository";
+import { assertUniqueAttributeName } from "../../attributes/attribute-errors";
 
 import type {
   CreateColorInput,
@@ -41,6 +42,7 @@ export const colorService = {
   },
 
   async createColor(data: CreateColorInput) {
+    await assertUniqueAttributeName("Color", data.name, undefined, colorRepository.findByName);
     const existingColor =
       await colorRepository.findBySlug(data.slug);
 
@@ -66,6 +68,8 @@ export const colorService = {
     if (!existingColor) {
       throw new Error("Color not found");
     }
+
+    await assertUniqueAttributeName("Color", updateData.name, id, colorRepository.findByName);
 
     if (updateData.slug) {
       const colorWithSlug =

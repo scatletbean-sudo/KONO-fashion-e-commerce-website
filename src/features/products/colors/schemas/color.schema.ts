@@ -31,8 +31,9 @@ export const createColorSchema = z.object({
       /^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$/,
       "Invalid hex color code",
     )
+    .nullable()
     .optional(),
-});
+}).strict();
 
 export const updateColorSchema = createColorSchema
   .partial()

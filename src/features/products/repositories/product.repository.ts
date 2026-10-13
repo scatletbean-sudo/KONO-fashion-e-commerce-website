@@ -1,6 +1,8 @@
 import { Prisma } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
+import { validateAttributeReferences } from "../attributes/reference-validation";
+import type { CreateProductInput } from "../schemas/product.schema";
 
 const productInclude = {
   categories: {
@@ -45,6 +47,20 @@ const getDb = (db?: DbClient) => {
 // ======================================================
 
 export const productRepository = {
+  async lockForUpdate(tx: DbClient, id: string, activating: boolean) {
+    await tx.$queryRaw(Prisma.sql`SELECT id FROM "Product" WHERE id = ${id} FOR UPDATE`);
+    if (activating) {
+      await tx.$queryRaw(Prisma.sql`SELECT id FROM "ProductVariant" WHERE "productId" = ${id} ORDER BY id FOR SHARE`);
+      await tx.$queryRaw(Prisma.sql`SELECT id FROM "ProductImage" WHERE "productId" = ${id} ORDER BY id FOR SHARE`);
+      await tx.$queryRaw(Prisma.sql`SELECT i.id FROM "Inventory" i JOIN "ProductVariant" v ON v.id = i."variantId" WHERE v."productId" = ${id} ORDER BY i.id FOR UPDATE OF i`);
+    }
+  },
+  async createWithReferences(data: Prisma.ProductCreateInput, references: CreateProductInput) {
+    return prisma.$transaction(async tx => {
+      await validateAttributeReferences(references, tx, true);
+      return getDb(tx).product.create({ data, include: productInclude });
+    });
+  },
   // ======================================================
   // TRANSACTION
   // ======================================================

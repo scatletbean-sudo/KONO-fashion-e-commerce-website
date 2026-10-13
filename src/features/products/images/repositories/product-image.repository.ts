@@ -1,11 +1,22 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import { MediaError } from "../media-policy";
 
 const productImageInclude = {
   product: true,
 } satisfies Prisma.ProductImageInclude;
 
 export const productImageRepository = {
+  async transaction<T>(productId: string, callback: (tx: Prisma.TransactionClient) => Promise<T>) {
+    return prisma.$transaction(async tx => {
+      const rows = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`SELECT id FROM "Product" WHERE id = ${productId} FOR UPDATE`);
+      if (!rows.length) throw new MediaError("Product not found", 404);
+      return callback(tx);
+    });
+  },
+  async productExists(productId: string) {
+    return !!(await prisma.product.findUnique({ where: { id: productId }, select: { id: true } }));
+  },
   async findAll() {
     return prisma.productImage.findMany({
       orderBy: [

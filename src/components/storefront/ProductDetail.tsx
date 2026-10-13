@@ -5,6 +5,7 @@ import { matchingVariants, type StorefrontProduct } from "./catalog";
 import { useCatalog } from "./useCatalog";
 import EditorialImage from "./EditorialImage";
 import ProductCard from "./ProductCard";
+import ImagePreview from "@/components/media/ImagePreview";
 import base from "./storefront.module.css";
 import styles from "./shop.module.css";
 
@@ -12,6 +13,7 @@ const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND
 
 function DetailContent({ product, related }: { product: StorefrontProduct; related: StorefrontProduct[] }) {
   const [imageIndex, setImageIndex] = useState(0);
+  const [preview, setPreview] = useState<{ url: string; alt?: string | null } | null>(null);
   const [color, setColor] = useState(product.variants[0]?.color?.id ?? "");
   const [size, setSize] = useState(product.variants[0]?.size?.id ?? "");
   const variants = matchingVariants(product, color, size);
@@ -21,13 +23,15 @@ function DetailContent({ product, related }: { product: StorefrontProduct; relat
   const sizes = [...new Map(product.variants.map((variant) => [variant.size?.id ?? "", { id: variant.size?.id ?? "", name: variant.size?.name ?? "One size", order: variant.size?.sortOrder ?? 0 }])).values()].sort((a, b) => a.order - b.order);
   const images = [...product.images].sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary) || a.sortOrder - b.sortOrder);
   return <>
+    {preview && <ImagePreview src={preview.url} alt={preview.alt || product.name} onClose={() => setPreview(null)} />}
     <nav className={styles.breadcrumb} aria-label="Breadcrumb"><Link href="/">KONO</Link><span>/</span><Link href="/shop">Shop</Link><span>/</span><span aria-current="page">{product.name}</span></nav>
     <div className={styles.detail}>
-      <div className={styles.gallery}><div className={styles.mainImage}>{images[imageIndex] ? <EditorialImage src={images[imageIndex].url} alt={images[imageIndex].alt || product.name} sizes="(max-width: 760px) 88vw, 54vw" eager /> : <div className={base.imageFallback} role="img" aria-label="Ảnh sản phẩm đang cập nhật"><span>KONO®</span><small>ẢNH ĐANG CẬP NHẬT</small></div>}</div>{images.length > 1 && <div className={styles.thumbnails} aria-label="Ảnh sản phẩm">{images.map((image, index) => <button key={image.id} onClick={() => setImageIndex(index)} aria-label={`Xem ảnh ${index + 1}`} aria-pressed={imageIndex === index}><EditorialImage src={image.url} alt="" sizes="90px" /></button>)}</div>}</div>
+      <div className={styles.gallery}><div className={styles.mainImage}>{images[imageIndex] ? <EditorialImage src={images[imageIndex].url} alt={images[imageIndex].alt || product.name} fit={["MULTI_VIEW", "SIZE_CHART"].includes(images[imageIndex].imageType ?? "PRODUCT") ? "contain" : "cover"} sizes="(max-width: 760px) 88vw, 54vw" eager /> : <div className={base.imageFallback} role="img" aria-label="Ảnh sản phẩm đang cập nhật"><span>KONO®</span><small>ẢNH ĐANG CẬP NHẬT</small></div>}</div>{images.length > 1 && <div className={styles.thumbnails} aria-label="Ảnh sản phẩm">{images.map((image, index) => <button key={image.id} onClick={() => setImageIndex(index)} aria-label={`Xem ảnh ${index + 1}`} aria-pressed={imageIndex === index}><EditorialImage src={image.url} alt="" fit="contain" sizes="90px" /></button>)}</div>}</div>
       <div className={styles.info}><p className={base.eyebrow}>KONO / FORM & IDENTITY</p><h1>{product.name}</h1><p className={styles.price} aria-live="polite">{price !== null ? money.format(price) : "Chọn phiên bản sản phẩm"}{price !== null && product.compareAtPrice != null && product.compareAtPrice > price && <del>{money.format(product.compareAtPrice)}</del>}</p>{product.shortDescription && <p className={styles.description}>{product.shortDescription}</p>}
         {product.variants.length > 0 && <><fieldset><legend>Màu: {colors.find((option) => option.id === color)?.name}</legend><div className={styles.options}>{colors.map((option) => <button key={option.id} aria-pressed={color === option.id} onClick={() => { setColor(option.id); if (!matchingVariants(product, option.id, size).length) setSize(product.variants.find((variant) => (variant.color?.id ?? "") === option.id)?.size?.id ?? ""); }}>{option.name}</button>)}</div></fieldset><fieldset><legend>Size</legend><div className={styles.options}>{sizes.map((option) => <button key={option.id} disabled={!matchingVariants(product, color, option.id).length} aria-pressed={size === option.id} onClick={() => setSize(option.id)}>{option.name}</button>)}</div></fieldset></>}
         <p className={styles.stock} role="status">{!product.variants.length ? "Sản phẩm chưa có phiên bản khả dụng." : variants.length > 1 ? "Có nhiều SKU cho lựa chọn này. Chưa thể xác định phiên bản." : selected?.inStock ? "Còn hàng" : "Phiên bản này hiện hết hàng."}</p>
         <div className={styles.notice}>Giỏ hàng đang được phát triển. Chưa thể đặt mua trên website.</div>
+      {images.some(image => image.imageType === "SIZE_CHART") && <details className={styles.descriptionPanel}><summary>SIZE CHART</summary>{images.filter(image => image.imageType === "SIZE_CHART").map(image => <div key={image.id} className="relative my-3 h-96"><EditorialImage src={image.url} alt={image.alt || "Size chart"} sizes="88vw" fit="contain" /><button type="button" onClick={() => setPreview(image)} className="absolute bottom-2 right-2 rounded-lg border bg-white px-4 py-2 text-sm">Expand and zoom</button></div>)}</details>}
         <details className={styles.descriptionPanel} open><summary>MÔ TẢ SẢN PHẨM</summary><p>{product.description || "Thông tin sản phẩm đang được cập nhật."}</p></details>
       </div>
     </div>

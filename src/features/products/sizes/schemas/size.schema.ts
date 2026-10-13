@@ -28,8 +28,9 @@ export const createSizeSchema = z.object({
     .number()
     .int()
     .min(0)
+    .max(2147483647)
     .default(0),
-});
+}).strict();
 
 export const updateSizeSchema = createSizeSchema
   .partial()

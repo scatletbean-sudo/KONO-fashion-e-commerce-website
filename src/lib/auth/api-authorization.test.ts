@@ -89,7 +89,7 @@ for (const [label, session, cookie] of [
   });
 }
 
-test("active ADMIN reaches every existing handler including dashboard/orders/payments", async () => {
+test("active ADMIN reaches supported handlers; permanent Product DELETE is blocked", async () => {
   const fixture = harness(activeAdmin);
   for (const file of routes) {
     const handlers = fixture.load(file);
@@ -97,6 +97,12 @@ test("active ADMIN reaches every existing handler including dashboard/orders/pay
       if (!["GET", "POST", "PATCH", "DELETE"].includes(method)) continue;
       const before = fixture.calls.length;
       const response = await (handler as Handler)(request(method), context);
+      if (method === "DELETE" && /[\\/]products[\\/]\[id\][\\/]route\.ts$/.test(file)) {
+        assert.equal(response.status, 409, file);
+        assert.match((await response.json()).message, /Permanent product deletion is not supported/);
+        assert.equal(fixture.calls.length, before, "blocked DELETE must not invoke any business service");
+        continue;
+      }
       assert.ok(response.status >= 200 && response.status < 300, `${file} ${method}: ${response.status}`);
       assert.ok(fixture.calls.length > before, `${file} ${method} must reach the existing service`);
     }
@@ -120,7 +126,7 @@ test("public catalog stays sanitized with and without ADMIN cookies", async () =
 
 test("ADMIN catalog reads retain management data on separate routes", async () => {
   const fixture = harness(activeAdmin);
-  const catalogRoutes = routes.filter((file) => /[\\/]admin[\\/](products|categories|collections|colors|sizes|inventory)[\\/]/.test(file));
+  const catalogRoutes = routes.filter((file) => /[\\/]admin[\\/](products|categories|collections|colors|sizes|inventory)[\\/]/.test(file) && typeof fixture.load(file).GET === "function");
   assert.equal(catalogRoutes.length, 16);
   for (const file of catalogRoutes) {
     const response = await (fixture.load(file).GET as Handler)(request("GET"), context);

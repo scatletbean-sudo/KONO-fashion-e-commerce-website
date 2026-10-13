@@ -41,7 +41,8 @@ function fixture() {
     inventory: { upsert: async (data: unknown) => record("inventory.upsert", data) },
   };
   const repositories = {
-    productRepository: { findById: async () => ({ id: "p" }), findBySlug: async () => null,
+    productRepository: { findById: async () => ({ id: "p", status: "DRAFT", categories: [], collections: [], images: [], variants: [{ id: "v", sku: "SKU", isActive: true, colorId: null, sizeId: null, inventory }] }), findBySlug: async () => null,
+      lockForUpdate: async () => undefined,
       create: async (data: unknown) => record("product.create", data),
       transaction: async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx) },
     variantRepository: { findById: async () => ({ id: "v", inventory }), findBySku: async () => null,
@@ -50,6 +51,7 @@ function fixture() {
       create: async (data: unknown) => record("inventory.create", data), update: async (_id: string, data: unknown) => record("inventory.update", data) },
   };
   const load = sourceLoader(Object.fromEntries([
+    ["@/generated/prisma/client", { Prisma: {} }],
     [path.resolve("src/features/products/repositories/product.repository"), { productRepository: repositories.productRepository }],
     [path.resolve("src/features/products/variants/repositories/variant.repository"), { variantRepository: repositories.variantRepository }],
     [path.resolve("src/features/inventory/repositories/inventory.repository"), { inventoryRepository: repositories.inventoryRepository }],

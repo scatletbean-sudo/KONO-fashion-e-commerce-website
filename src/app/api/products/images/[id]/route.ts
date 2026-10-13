@@ -1,177 +1,30 @@
 import { catalogError, catalogResponse } from "@/features/products/public-catalog";
 import { getAdminSession } from "@/lib/auth/admin-guard";
-import { NextRequest, NextResponse } from "next/server";
-
-import {
-  productImageIdSchema,
-  updateProductImageSchema,
-} from "@/features/products/images/schemas/product-image.schema";
-
+import { NextResponse } from "next/server";
+import { assertMediaOrigin, mediaErrorResponse } from "@/lib/admin/api/media";
+import { updateProductImageSchema } from "@/features/products/images/schemas/product-image.schema";
 import { productImageService } from "@/features/products/images/services/product-image.service";
 
-type RouteContext = {
-  params: Promise<{
-    id: string;
-  }>;
-};
-
-export async function GET(
-  _request: NextRequest,
-  context: RouteContext,
-) {
-  try {
-    const { id } = await context.params;
-
-    const validation =
-      productImageIdSchema.safeParse({ id });
-
-    if (!validation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid product image ID",
-        },
-        { status: 400 },
-      );
-    }
-
-    const data =
-      await productImageService.getImageById(id);
-
-    return catalogResponse("images", data);
-  } catch (error) {
-    return catalogError(error);
-  }
+type Context = { params: Promise<{ id: string }> };
+export async function GET(_request: Request, { params }: Context) {
+  try { return catalogResponse("images", await productImageService.getImageById((await params).id)); }
+  catch (error) { return catalogError(error); }
 }
-
-export async function PATCH(
-  request: NextRequest,
-  context: RouteContext,
-) {
+export async function PATCH(request: Request, { params }: Context) {
   try {
-    const session = await getAdminSession();
-
-    if (!session) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
-    }
-
-    const { id } = await context.params;
-
-    const body = await request.json();
-
-    const result =
-      updateProductImageSchema.safeParse({
-        ...body,
-        id,
-      });
-
-    if (!result.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Validation failed",
-          errors: result.error.flatten(),
-        },
-        { status: 400 },
-      );
-    }
-
-    const data =
-      await productImageService.updateImage(
-        result.data,
-      );
-
-    return NextResponse.json({
-      success: true,
-      data,
-    });
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Failed to update product image";
-
-    if (message === "Product image not found") {
-      return NextResponse.json(
-        {
-          success: false,
-          message,
-        },
-        { status: 404 },
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message,
-      },
-      { status: 500 },
-    );
-  }
+    if (!(await getAdminSession())) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    assertMediaOrigin(request);
+    const result = updateProductImageSchema.safeParse({ ...await request.json(), id: (await params).id });
+    if (!result.success) return NextResponse.json({ success: false, message: "Validation failed", errors: result.error.flatten() }, { status: 400 });
+    const data = await productImageService.updateImage(result.data);
+    return NextResponse.json({ success: true, data }, { headers: { "Cache-Control": "private, no-store" } });
+  } catch (error) { return mediaErrorResponse(error); }
 }
-
-export async function DELETE(
-  _request: NextRequest,
-  context: RouteContext,
-) {
+export async function DELETE(request: Request, { params }: Context) {
   try {
-    const session = await getAdminSession();
-
-    if (!session) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
-    }
-
-    const { id } = await context.params;
-
-    const validation =
-      productImageIdSchema.safeParse({ id });
-
-    if (!validation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid product image ID",
-        },
-        { status: 400 },
-      );
-    }
-
-    const data =
-      await productImageService.deleteImage(id);
-
-    return NextResponse.json({
-      success: true,
-      data,
-    });
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Failed to delete product image";
-
-    if (message === "Product image not found") {
-      return NextResponse.json(
-        {
-          success: false,
-          message,
-        },
-        { status: 404 },
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message,
-      },
-      { status: 500 },
-    );
-  }
+    if (!(await getAdminSession())) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    assertMediaOrigin(request);
+    const data = await productImageService.deleteImage((await params).id);
+    return NextResponse.json({ success: true, data }, { headers: { "Cache-Control": "private, no-store" } });
+  } catch (error) { return mediaErrorResponse(error); }
 }

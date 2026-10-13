@@ -300,6 +300,19 @@ model ProductCollection {
 // PRODUCT IMAGE
 // ======================================================
 
+enum ProductImageType {
+  FRONT_VIEW
+  BACK_VIEW
+  LEFT_VIEW
+  RIGHT_VIEW
+  DETAIL
+  ON_MODEL
+  MULTI_VIEW
+  SIZE_CHART
+  PRODUCT
+  LIFESTYLE
+}
+
 model ProductImage {
   id        String @id @default(cuid())
   productId String
@@ -309,6 +322,14 @@ model ProductImage {
   sortOrder Int     @default(0)
 
   isPrimary Boolean @default(false)
+
+  imageType          ProductImageType @default(PRODUCT)
+  cloudinaryPublicId String?          @unique
+  cloudinaryAssetId  String?          @unique
+  width              Int?
+  height             Int?
+  bytes              Int?
+  format             String?
 
   createdAt DateTime @default(now())
 

@@ -1,3 +1,4 @@
+import { attributeErrorResponse } from "@/lib/admin/api/attribute-errors";
 import { catalogError, catalogResponse } from "@/features/products/public-catalog";
 import { getAdminSession } from "@/lib/auth/admin-guard";
 import { NextRequest, NextResponse } from "next/server";
@@ -39,6 +40,8 @@ export async function GET(
 
     return catalogResponse("sizes", size);
   } catch (error) {
+    const attributeError = attributeErrorResponse(error);
+    if (attributeError) return attributeError;
     return catalogError(error);
   }
 }
@@ -85,6 +88,8 @@ export async function PATCH(
       data: size,
     });
   } catch (error) {
+    const attributeError = attributeErrorResponse(error);
+    if (attributeError) return attributeError;
     if (
       error instanceof Error &&
       error.message === "Size not found"
@@ -157,6 +162,8 @@ export async function DELETE(
       data: size,
     });
   } catch (error) {
+    const attributeError = attributeErrorResponse(error);
+    if (attributeError) return attributeError;
     if (
       error instanceof Error &&
       error.message === "Size not found"
