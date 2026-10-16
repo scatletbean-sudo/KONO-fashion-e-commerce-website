@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowUpRight, Search, ShoppingBag, UserRound } from "lucide-react";
+import { ArrowUpRight, Search, UserRound } from "lucide-react";
 import styles from "./storefront.module.css";
+import CartBag from "./CartBag";
 
 const navigation = [{ label: "SHOP", href: "/shop" }, { label: "COLLECTIONS", href: "/#collections" }, { label: "ABOUT", href: "/#about" }];
 
@@ -8,7 +9,7 @@ export function StorefrontHeader() {
   return <header className={styles.header}>
     <Link className={styles.logo} href="/" aria-label="KONO — đầu trang">KONO<span>®</span></Link>
     <nav className={styles.desktopNav} aria-label="Điều hướng chính">{navigation.map((item) => <Link key={item.label} href={item.href}>{item.label}</Link>)}</nav>
-    <div className={styles.headerTools}><Link href="/shop#catalog-search" aria-label="Tìm sản phẩm"><Search size={19} strokeWidth={1.5} /></Link><button disabled title="Tài khoản khách hàng chưa khả dụng" aria-label="Tài khoản khách hàng chưa khả dụng"><UserRound size={19} strokeWidth={1.5} /></button><button disabled title="Giỏ hàng chưa khả dụng" aria-label="Giỏ hàng chưa khả dụng"><ShoppingBag size={19} strokeWidth={1.5} /></button></div>
+    <div className={styles.headerTools}><Link href="/shop#catalog-search" aria-label="Tìm sản phẩm"><Search size={19} strokeWidth={1.5} /></Link><button disabled title="Tài khoản khách hàng chưa khả dụng" aria-label="Tài khoản khách hàng chưa khả dụng"><UserRound size={19} strokeWidth={1.5} /></button><CartBag /></div>
     <details className={styles.mobileNav}><summary>MENU <span aria-hidden="true">+</span></summary><nav aria-label="Điều hướng mobile">{navigation.map((item) => <Link key={item.label} href={item.href}>{item.label}</Link>)}</nav></details>
   </header>;
 }

@@ -85,7 +85,7 @@
   align-items: center;
 }
 
-.headerTools a,.headerTools button {
+.headerTools>a,.headerTools>button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -95,9 +95,15 @@
   background: none;
 }
 
-.headerTools button {
+.headerTools>button:disabled {
   opacity: .35;
   cursor: not-allowed;
+}
+
+.headerTools>button:not(:disabled) {
+  cursor: pointer;
+  gap: 4px;
+  font-size: 10px;
 }
 
 .mobileNav {

@@ -2,17 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { assertMediaDevelopmentIdentity, assertMediaDevelopmentUrl, mediaDevelopmentTarget, mediaRequestOrigin } from "./media-dev-runtime";
 
-const dev = "postgresql://synthetic:synthetic@ep-fragrant-pine-b3qx5bzw-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=verify-full&channel_binding=require";
+const dev = "postgresql://synthetic:synthetic@ep-lucky-fire-b3froe7u-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=verify-full&channel_binding=require";
 test("local runtime accepts the exact strict dev URL and rejects production, weak SSL and missing configuration", () => {
   assert.doesNotThrow(() => assertMediaDevelopmentUrl(dev));
-  for (const url of [undefined, dev.replace("ep-fragrant-pine-b3qx5bzw", "ep-icy-butterfly-b3dbylfa"), dev.replace("verify-full", "require"), dev.replace("/neondb?", "/other?")]) {
+  for (const url of [undefined, dev.replace("ep-lucky-fire-b3froe7u", "ep-fragrant-pine-b3qx5bzw"), dev.replace("ep-lucky-fire-b3froe7u", "ep-icy-butterfly-b3dbylfa"), dev.replace("verify-full", "require"), dev.replace("/neondb?", "/other?")]) {
     assert.throws(() => assertMediaDevelopmentUrl(url));
   }
 });
 test("runtime identity must prove the actual dev branch, endpoint, database, schema and read-only transaction", () => {
   const identity = { ...mediaDevelopmentTarget, readOnly: "on" };
   assert.doesNotThrow(() => assertMediaDevelopmentIdentity(identity));
-  for (const patch of [{ branch: "br-dry-pine-b3l81xxy" }, { endpoint: "ep-icy-butterfly-b3dbylfa" }, { database: "other" }, { schema: "other" }, { project: "other" }, { readOnly: "off" }]) {
+  for (const patch of [{ branch: "br-quiet-block-b38k6k1x" }, { branch: "br-dry-pine-b3l81xxy" }, { endpoint: "ep-fragrant-pine-b3qx5bzw" }, { endpoint: "ep-icy-butterfly-b3dbylfa" }, { database: "other" }, { schema: "other" }, { project: "other" }, { readOnly: "off" }]) {
     assert.throws(() => assertMediaDevelopmentIdentity({ ...identity, ...patch }));
   }
 });

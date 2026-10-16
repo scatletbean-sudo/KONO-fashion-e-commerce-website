@@ -1,6 +1,6 @@
 export const mediaDevelopmentTarget = {
-  project: "hidden-forest-64993760", branch: "br-quiet-block-b38k6k1x",
-  endpoint: "ep-fragrant-pine-b3qx5bzw", database: "neondb", schema: "public",
+  project: "hidden-forest-64993760", branch: "br-proud-field-b3xjljxh",
+  endpoint: "ep-lucky-fire-b3froe7u", database: "neondb", schema: "public",
 } as const;
 
 export function assertMediaDevelopmentUrl(value: string | undefined) {

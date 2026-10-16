@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { Client } from "pg";
 
 const productId = "cmuedw86k0000q0ufukh57s7m";
-const expected = { project: "hidden-forest-64993760", branch: "br-quiet-block-b38k6k1x", endpoint: "ep-fragrant-pine-b3qx5bzw", database: "neondb", schema: "public" };
+const expected = { project: "hidden-forest-64993760", branch: "br-proud-field-b3xjljxh", endpoint: "ep-lucky-fire-b3froe7u", database: "neondb", schema: "public" };
 const fail = message => { throw new Error(message); };
 function originalSnapshot() {
   const cipher = fs.readFileSync(".kono-backups/media-1791891277529/product-image-baseline.dpapi");

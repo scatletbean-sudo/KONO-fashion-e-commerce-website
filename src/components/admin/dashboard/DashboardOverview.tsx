@@ -30,7 +30,7 @@ type DashboardOverviewData = {
     id: string;
     orderNumber: string;
     customerName: string;
-    customerEmail: string;
+    customerEmail: string | null;
     status: string;
     totalAmount: number;
     currency: string;

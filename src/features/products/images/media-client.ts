@@ -36,3 +36,23 @@ export async function uploadImageDirect(file: File, signed: SignedUpload, fetche
   if (!response.ok) throw new Error("Cloudinary rejected the upload. Check the image format and size.");
   // Resource metadata and URL are fetched independently on the server before attachment.
 }
+
+// Reuse the exact destination/signature/form validation above; XHR adds real byte progress.
+export async function uploadImageWithProgress(file: File, signed: SignedUpload, onProgress: (percent: number) => void) {
+  const transfer: typeof fetch = (input, init) => new Promise<Response>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", String(input));
+    xhr.withCredentials = false;
+    xhr.timeout = 120000;
+    xhr.upload.onprogress = event => {
+      if (event.lengthComputable) onProgress(Math.min(100, Math.round(event.loaded / event.total * 100)));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status <= 599) resolve(new Response(null, { status: xhr.status }));
+      else reject(new Error("Transfer failed"));
+    };
+    xhr.onerror = xhr.ontimeout = xhr.onabort = () => reject(new Error("Transfer failed"));
+    xhr.send(init?.body as FormData);
+  });
+  await uploadImageDirect(file, signed, transfer);
+}

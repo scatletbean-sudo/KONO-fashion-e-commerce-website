@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import { Client } from "pg";
 
-const expected = { project: "hidden-forest-64993760", branch: "br-quiet-block-b38k6k1x", endpoint: "ep-fragrant-pine-b3qx5bzw", database: "neondb", schema: "public" };
+const expected = { project: "hidden-forest-64993760", branch: "br-proud-field-b3xjljxh", endpoint: "ep-lucky-fire-b3froe7u", database: "neondb", schema: "public" };
 const email = "admin@kono.local";
 const guard = condition => { if (!condition) throw new Error("Stopped"); };
 async function identity(client) {

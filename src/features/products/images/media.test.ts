@@ -9,7 +9,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { sourceLoader } from "@/lib/testing/load-source";
 import * as policy from "./media-policy";
 import { createProductImageSchema, updateProductImageSchema } from "./schemas/product-image.schema";
-import { uploadImageDirect, mediaRequest } from "./media-client";
+import { uploadImageDirect, uploadImageWithProgress, mediaRequest } from "./media-client";
 
 const nativeRequire = createRequire(import.meta.url);
 const config = { cloudName: "offline-cloud", apiKey: "offline-key", apiSecret: "offline-secret" };
@@ -191,6 +191,43 @@ test("direct browser upload uses only the Cloudinary image endpoint, sends no co
 test("media client detects expired admin session and malformed envelopes", async () => {
   await assert.rejects(mediaRequest("/api/test", policy.mediaImageSchema, {}, async () => Response.json({}, { status: 401 })), /session expired/);
   await assert.rejects(mediaRequest("/api/test", policy.mediaImageSchema, {}, async () => Response.json({ success: true, data: {} })), /Unexpected/);
+});
+
+test("progress upload sends signed form without credentials and safely handles HTTP/network/timeout failures", async () => {
+  const previous = globalThis.XMLHttpRequest;
+  let outcome = "success";
+  let calls = 0;
+  const progress: number[] = [];
+  class Transfer {
+    upload: { onprogress: (event: { lengthComputable: boolean; loaded: number; total: number }) => void } = { onprogress: () => {} };
+    withCredentials = false;
+    timeout = 0;
+    status = 200;
+    onload = () => {};
+    onerror = () => {};
+    ontimeout = () => {};
+    open(method: string, url: string) { assert.equal(method, "POST"); assert.equal(url, "https://api.cloudinary.com/v1_1/offline-cloud/image/upload"); }
+    send(body: FormData) {
+      calls++;
+      assert.equal(this.withCredentials, false); assert.equal(this.timeout, 120000);
+      assert.equal(body.get("signature"), "synthetic"); assert.equal(body.has("api_secret"), false);
+      this.upload.onprogress({ lengthComputable: true, loaded: 1, total: 2 });
+      if (outcome === "network") this.onerror();
+      else if (outcome === "timeout") this.ontimeout();
+      else { this.status = outcome === "http" ? 400 : outcome === "zero" ? 0 : 200; this.onload(); }
+    }
+  }
+  globalThis.XMLHttpRequest = Transfer as unknown as typeof XMLHttpRequest;
+  try {
+    const signed = { uploadUrl: "https://api.cloudinary.com/v1_1/offline-cloud/image/upload", apiKey: "synthetic", signature: "synthetic", params: { overwrite: "false" }, uploadToken: "synthetic", publicId: "mock", maxBytes: 10485760 };
+    const image = new File(["offline"], "test.webp", { type: "image/webp" });
+    await uploadImageWithProgress(image, signed, value => progress.push(value));
+    assert.deepEqual(progress, [50]);
+    for (outcome of ["http", "network", "timeout", "zero"]) await assert.rejects(uploadImageWithProgress(image, signed, () => {}), /Cloudinary rejected|Upload could not finish/);
+    const before = calls;
+    await assert.rejects(uploadImageWithProgress(image, { ...signed, uploadUrl: "https://evil.example/upload" }, () => {}), /Invalid upload destination/);
+    assert.equal(calls, before);
+  } finally { globalThis.XMLHttpRequest = previous; }
 });
 
 test("signed upload rejects cross-site requests before any media service runs", async () => {

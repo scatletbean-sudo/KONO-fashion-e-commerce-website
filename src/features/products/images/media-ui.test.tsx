@@ -49,6 +49,8 @@ test("Media Manager renders legacy originals, categories, accessible reorder/met
   for (const category of policy.imageTypes) assert.ok(html.includes(category));
   assert.ok(html.includes("Primary Image")); assert.ok(html.includes("Move image 1 earlier"));
   assert.ok(html.includes('accept="image/jpeg,image/png,image/webp"')); assert.ok(html.includes("Confirm removal"));
+  assert.ok(html.includes("Browse Files")); assert.ok(html.includes('class="sr-only"'));
+  assert.equal(html.includes("<textarea"), false, "Metadata fields appear only in the edit dialog");
   assert.ok(html.includes("Its original file is retained")); assert.ok(html.includes("10 MB"));
   assert.equal(html.includes("CLOUDINARY_API_SECRET"), false);
 });
@@ -66,8 +68,10 @@ test("storefront contains MULTI_VIEW and renders expandable original SIZE_CHART 
     images: [old, { ...old, id: "chart", imageType: "SIZE_CHART", url: "https://legacy.example/chart.png", sortOrder: 1, isPrimary: false }] };
   const Detail = components([product])("src/components/storefront/ProductDetail.tsx").default as ComponentType<{ slug: string }>;
   const html = renderToString(createElement(Detail, { slug: "kono" }));
-  assert.ok(html.includes("object-fit:contain")); assert.ok(html.includes("transform:none"), "Hover scaling must not crop multi-view originals"); assert.ok(html.includes("<summary>SIZE CHART</summary>"));
-  assert.ok(html.includes("Expand and zoom")); assert.ok(html.includes("https://legacy.example/chart.png"));
+  assert.ok(html.includes("object-fit:contain"));
+  assert.ok(html.includes('aria-label="Open Size Guide"'));
+  assert.ok(html.includes('aria-label="Zoom image 1"'));
+  assert.equal(html.includes("https://legacy.example/chart.png"), false, "Size chart stays outside the main gallery until the guide opens");
 });
 
 test("full-image preview uses a native dialog, close action, scrollable zoom and contain at 100%", () => {
